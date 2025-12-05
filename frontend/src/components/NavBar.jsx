@@ -20,8 +20,8 @@ function NavBar(){
             </div>
 
             <div className="flex items-center gap-4">
-              <a href="#" className="hidden md:inline-block px-4 py-2 text-sm font-medium border rounded-md border-slate-200">Sign in</a>
-              <a href="#" className="px-4 py-2 text-sm font-semibold rounded-md bg-indigo-600 text-white shadow hover:bg-indigo-700">Get Started</a>
+              <a href="/login" className="hidden md:inline-block px-4 py-2 text-sm font-medium border rounded-md border-slate-200">Sign in</a>
+              <a href="/signup" className="px-4 py-2 text-sm font-semibold rounded-md bg-indigo-600 text-white shadow hover:bg-indigo-700">Get Started</a>
             </div>
           </div>
         </div>

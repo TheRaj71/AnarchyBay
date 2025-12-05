@@ -1,8 +1,8 @@
 import React from "react";
-import NavBar from "./NavBar";
-import TrendingSlider from "./landing/TrendingSlider";
+import NavBar from "./NavBar.jsx";
+import TrendingSlider from "./landing/TrendingSlider.jsx";
 import { useState } from "react";
-import LearnMorePage from "./LearnMorePage";
+import LearnMorePage from "./LearnMorePage.jsx";
 
 
 // BitShelf Landing Page — Single-file React component using Tailwind CSS
