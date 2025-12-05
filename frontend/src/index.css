@@ -1,1 +1,15 @@
+/* Global CSS variables used by home.css and app styles */
+:root {
+	--background: 210 16% 98%; /* light gray background: H S L */
+	--foreground: 220 15% 12%;
+	--primary: 230 80% 55%;
+	--accent: 300 85% 55%;
+	--secondary: 210 10% 90%;
+	--card: 0 0% 100%;
+	--border: 220 10% 90%;
+}
+
 @import "tailwindcss";
+
+/* Custom landing page styles (loaded after Tailwind so they can augment utilities) */
+@import "./styles/home.css";

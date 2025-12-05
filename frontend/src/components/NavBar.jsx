@@ -1,34 +1,93 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/auth/use-auth";
 
+export default function NavBar({ onProtectedClick }) {
+  const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
 
-function NavBar(){
-    return (
-        <>
-        
-        {/* NAVBAR */}
-      <header className="fixed inset-x-0 top-0 z-40 backdrop-blur bg-white/60 border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <div className="rounded-md px-3 py-1 font-semibold text-indigo-600 bg-indigo-50">BitShelf</div>
-              <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700">
-                <a href="/" className="hover:text-indigo-600">Home</a>
-                <a href="#features" className="hover:text-indigo-600">Features</a>
-                <a href="#products" className="hover:text-indigo-600">Products</a>
-                <a href="#pricing" className="hover:text-indigo-600">Pricing</a>
-                <a href="#about" className="hover:text-indigo-600">About</a>
-              </nav>
-            </div>
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-            <div className="flex items-center gap-4">
-              <a href="/login" className="hidden md:inline-block px-4 py-2 text-sm font-medium border rounded-md border-slate-200">Sign in</a>
-              <a href="/signup" className="px-4 py-2 text-sm font-semibold rounded-md bg-indigo-600 text-white shadow hover:bg-indigo-700">Get Started</a>
-            </div>
+  return (
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-background/80 backdrop-blur-lg shadow-lg"
+          : "bg-transparent"
+      }`}
+    >
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between shadow-black">
+        <div 
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition"
+          onClick={() => navigate("/")}
+        >
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <span className="border-2 border-gray-950 px-1 rounded-full text-gray-950 text-primary-foreground font-bold text-xl">B</span>
           </div>
+          <span className="font-bold text-xl text-foreground">BitShelf</span>
         </div>
-      </header>
 
-        </>
-    )
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center gap-8">
+          <button 
+            onClick={() => navigate("/")}
+            className="text-muted-foreground hover:text-primary transition"
+          >
+            Home
+          </button>
+          <a href="#features" className="text-muted-foreground hover:text-primary transition">
+            Features
+          </a>
+          <a href="#products" className="text-muted-foreground hover:text-primary transition">
+            Products
+          </a>
+          <a href="#pricing" className="text-muted-foreground hover:text-primary transition">
+            Pricing
+          </a>
+        </div>
+
+        {/* Auth Buttons */}
+        <div className="flex items-center gap-3">
+          {isAuthenticated ? (
+            <>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="px-4 py-2 text-sm text-muted-foreground hover:text-primary transition"
+              >
+                Dashboard
+              </button>
+
+              <button
+                onClick={logout}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition btn-pulse"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate("/login")}
+                className="px-4 py-2 bg-gray-950 text-white border-0 rounded-xl text-sm text-muted-foreground hover:text-primary transition"
+              >
+                Sign In
+              </button>
+
+              <button
+                onClick={() => navigate("/signup")}
+                className="px-4 py-2  bg-gray-950 text-white border-0 rounded-xl  bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition btn-pulse"
+              >
+                Get Started
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
 }
-
-export default NavBar
