@@ -47,13 +47,14 @@ export const createUserProfileController = async (req, res) => {
     }
 }
 
-export const getUserProfileController = async (req, res) => {
+// Get current user's profile from authenticated context
+export const getMyProfileController = async (req, res) => {
     try{
-        const { userId } = req.body;
+        const userId = req.user?.id;
 
         if (!userId){
-            return res.status(400).json({
-                error: "User ID is required"
+            return res.status(401).json({
+                error: "Unauthorized"
             });
         }
         const {data, error} = await getUserProfile({ userId });
@@ -64,7 +65,7 @@ export const getUserProfileController = async (req, res) => {
 
         return res.status(200).json(data);
     } catch (error){
-        console.error("Error in getUserProfile controller: ", error);
+        console.error("Error in getMyProfile controller: ", error);
         return res.status(500).json({
             error: "Internal server error"
         }) 

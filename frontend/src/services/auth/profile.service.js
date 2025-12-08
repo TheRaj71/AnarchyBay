@@ -16,12 +16,11 @@ export const createUserProfile = async ({
   return data;
 };
 
-export const getUserProfile = async (userId) => {
-  const data = await api.post(
-    "/api/profile/get-user-profile",
-    {userId},
+export const getUserProfile = async () => {
+  const data = await api.get(
+    "/api/profile/me",
     {requireAuth: true}
-  )
+  );
   return data;
 }
 
