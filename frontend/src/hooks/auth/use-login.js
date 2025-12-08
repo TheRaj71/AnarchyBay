@@ -13,7 +13,7 @@ const useLogin = () => {
     },
     onSuccess: () => {
       toast.success("Login successful");
-      navigate("/");
+      navigate("/dashboard");
     },
   });
 };

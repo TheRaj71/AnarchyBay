@@ -42,7 +42,7 @@ const SignUpPage = () => {
 
     signUp({
       name: formData.name,
-      email: formscreenData.email,
+      email: formData.email,
       password: formData.password,
       role: formData.role,
       sellerCode: formData.sellerCode || undefined,
