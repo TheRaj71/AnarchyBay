@@ -6,7 +6,55 @@ export const createUserProfile = async ({ id, name, email, role }) => {
 }
 
 export const getUserProfile = async ({ userId }) => {
-    return await supabase.from("profiles").select("name, role").eq("id", userId).single();
+    return await supabase
+        .from("profiles")
+        .select("id, name, email, role, username, display_name, bio, preferred_payment_provider, stripe_customer_id, stripe_account_id, dodo_customer_id, dodo_merchant_id, profile_image_url, created_at, updated_at")
+        .eq("id", userId)
+        .single();
+}
+
+export const getPublicProfile = async ({ userId }) => {
+    return await supabase
+        .from("profiles")
+        .select("id, name, username, display_name, bio, profile_image_url, created_at")
+        .eq("id", userId)
+        .single();
+}
+
+export const getProfileByUsername = async (username) => {
+    return await supabase
+        .from("profiles")
+        .select("id, name, username, display_name, bio, profile_image_url, created_at")
+        .eq("username", username)
+        .single();
+}
+
+export const updateUserProfile = async ({ userId, updates }) => {
+    const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+    };
+
+    return await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("id", userId)
+        .select("id, name, email, role, username, display_name, bio, preferred_payment_provider, stripe_customer_id, stripe_account_id, dodo_customer_id, dodo_merchant_id, profile_image_url, created_at, updated_at")
+        .single();
+}
+
+export const checkUsernameAvailable = async (username, excludeUserId = null) => {
+    let query = supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username);
+    
+    if (excludeUserId) {
+        query = query.neq("id", excludeUserId);
+    }
+    
+    const { data } = await query.maybeSingle();
+    return !data;
 }
 
 export const getTotalUsers = async () => {

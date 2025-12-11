@@ -122,8 +122,7 @@ export default function UploadResource() {
         throw new Error(txt || "Upload failed");
       }
 
-      const data = await res.json().catch(() => null);
-      // navigate to resource or dashboard
+      await res.json().catch(() => null);
       navigate('/dashboard');
     } catch (err) {
       console.error(err);

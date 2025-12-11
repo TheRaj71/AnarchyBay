@@ -1,204 +1,186 @@
-// src/pages/LandingPage.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth/use-auth";
-import "@/styles/home.css"; // keep your custom animations here
-import NavBar from "../components/NavBar";
-
-/**
- * High-quality Landing Page for BitShelf
- * - Role-aware hero (seller vs customer)
- * - Premium cards, gradients, glass blur, subtle motion
- * - Accessible structure and responsive layout
- *
- * Drop into your app and tweak colors/strings as needed.
- */
+import NavBar from "./NavBar";
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const [products, setProducts] = useState([]);
 
-  const handleProtectedAction = () => {
-    if (!isAuthenticated) navigate("/login");
-    else navigate("/dashboard");
-  };
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/products/list`)
+      .then(res => res.json())
+      .then(data => setProducts(data.products?.slice(0, 6) || []))
+      .catch(() => {});
+  }, []);
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 text-slate-100">
-      <NavBar onProtectedClick={() => (isAuthenticated ? navigate("/dashboard") : navigate("/login"))} />
+    <div className="min-h-screen bg-white">
+      <NavBar />
 
       <main className="pt-20">
-        <PremiumHero
-          isAuthenticated={isAuthenticated}
-          user={user}
-          onPrimary={handleProtectedAction}
-        />
-
-        <div className="max-w-6xl mx-auto px-6">
-          <TrustedBy />
-          <FeaturesSection />
-          <HowItWorks />
-          <ProductCarousel />
-          <PricingSection onChoose={handleProtectedAction} />
-          <TestimonialsSection />
-          <FinalCTABanner onGetStarted={handleProtectedAction} />
-        </div>
+        <HeroSection navigate={navigate} isAuthenticated={isAuthenticated} />
+        <MarqueeSection />
+        <FeaturesSection />
+        <ProductsSection products={products} navigate={navigate} />
+        <HowItWorksSection />
+        <PricingSection navigate={navigate} isAuthenticated={isAuthenticated} />
+        <CTASection navigate={navigate} isAuthenticated={isAuthenticated} />
       </main>
 
-      <footer className="mt-16">
-        <Footer />
-      </footer>
+      <Footer />
     </div>
   );
 }
 
-/* ---------------- Hero ---------------- */
-function PremiumHero({ isAuthenticated, user, onPrimary }) {
+function HeroSection({ navigate, isAuthenticated }) {
   return (
-    <header className="relative overflow-hidden">
-      {/* Decorative gradient blobs (absolutely positioned) */}
-      <GradientBlob className="-left-48 -top-32 scale-125 opacity-30" />
-      <GradientBlob className="-right-40 -bottom-40 scale-110 opacity-25" />
+    <section className="relative overflow-hidden py-12 md:py-20">
+      <div className="absolute inset-0 pattern-dots opacity-30" />
+      
+      <div className="absolute top-20 right-10 w-32 h-32 bg-[var(--pink-300)] border-3 border-black rotate-12 animate-float hidden lg:block" />
+      <div className="absolute bottom-20 left-10 w-24 h-24 bg-[var(--yellow-400)] border-3 border-black -rotate-6 animate-float hidden lg:block" style={{ animationDelay: "1s" }} />
+      <div className="absolute top-40 left-1/4 w-16 h-16 bg-[var(--mint)] border-3 border-black rotate-45 animate-bounce-subtle hidden lg:block" />
 
-      <div className="max-w-6xl mx-auto px-6 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-3 bg-white/6 px-3 py-1 rounded-full backdrop-blur-sm border border-white/6 text-sm">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M12 2L12 12L22 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              <span className="font-medium">For developers · Built for creators</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--yellow-400)] border-3 border-black shadow-[4px_4px_0px_var(--black)]">
+              <span className="w-2 h-2 bg-[var(--pink-500)] rounded-full animate-pulse" />
+              <span className="font-bold text-sm uppercase">Built for Indian Creators</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
-              Sell code, templates & APIs — <span className="bg-clip-text text-transparent bg-linear-to-r from-cyan-300 to-indigo-400">built for developers</span>.
+            <h1 className="text-5xl md:text-7xl font-black leading-[0.95] tracking-tight">
+              Sell your
+              <span className="block text-[var(--pink-500)]">Digital Products</span>
+              <span className="block">in Minutes</span>
             </h1>
 
-            <p className="text-slate-300 max-w-xl">
-              BitShelf helps you package, license, and sell digital developer products with instant delivery, license management, and smooth Indian payments.
-              {isAuthenticated && user?.name ? <span> Welcome back, <strong>{user.name}</strong> 👋</span> : null}
+            <p className="text-xl text-gray-700 max-w-lg leading-relaxed">
+              The simplest way to sell templates, code, ebooks & digital assets. 
+              <span className="font-bold"> UPI payments, instant delivery, zero hassle.</span>
             </p>
 
-            <div className="flex flex-wrap gap-3 items-center">
+            <div className="flex flex-wrap gap-4">
               <button
-                onClick={onPrimary}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-linear-to-r from-indigo-500 to-cyan-500 text-white font-semibold shadow-lg transform hover:-translate-y-0.5 transition"
-                aria-label="Get started"
+                onClick={() => navigate(isAuthenticated ? "/dashboard" : "/signup")}
+                className="px-8 py-4 text-lg font-black uppercase bg-[var(--pink-500)] text-white border-3 border-black shadow-[6px_6px_0px_var(--black)] hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_var(--black)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-[3px_3px_0px_var(--black)] transition-all"
               >
-                {isAuthenticated ? "Go to Dashboard" : "Get Started — It's Free"}
-                <svg className="w-4 h-4 opacity-90" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {isAuthenticated ? "Go to Dashboard" : "Start Selling Free"}
               </button>
-
-              <a
-                href="#features"
-                className="text-sm text-slate-300 hover:text-white transition"
+              <button
+                onClick={() => navigate("/browse")}
+                className="px-8 py-4 text-lg font-black uppercase bg-white border-3 border-black shadow-[6px_6px_0px_var(--black)] hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_var(--black)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-[3px_3px_0px_var(--black)] transition-all"
               >
-                Explore features →
-              </a>
+                Browse Products
+              </button>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-4 text-sm text-slate-300">
-              <span>Instant Delivery</span>
-              <span className="opacity-50">•</span>
-              <span>License Keys</span>
-              <span className="opacity-50">•</span>
-              <span>INR Payments</span>
+            <div className="flex flex-wrap gap-6 pt-4">
+              {["UPI & Cards", "Instant Delivery", "INR Pricing"].map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-[var(--mint)] border-2 border-black flex items-center justify-center">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="font-bold text-sm">{item}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="relative">
-            <div className="rounded-2xl bg-white/4 border border-white/6 p-6 shadow-xl backdrop-blur-lg transform hover:scale-[1.01] transition">
+            <div className="bg-white border-3 border-black shadow-[8px_8px_0px_var(--black)] p-6 rotate-2 hover:rotate-0 transition-transform">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <AvatarPlaceholder />
-                  <div>
-                    <div className="font-semibold">BitShelf Store</div>
-                    <div className="text-xs text-slate-300">by You • Developer Tools</div>
-                  </div>
+                <div className="flex gap-2">
+                  <div className="w-4 h-4 rounded-full bg-[var(--pink-400)] border-2 border-black" />
+                  <div className="w-4 h-4 rounded-full bg-[var(--yellow-400)] border-2 border-black" />
+                  <div className="w-4 h-4 rounded-full bg-[var(--mint)] border-2 border-black" />
                 </div>
-
-                <div className="text-sm text-slate-300">Live</div>
+                <span className="text-xs font-bold uppercase text-gray-500">AnarchyBay Store</span>
               </div>
-
-              <div className="h-48 bg-linear-to-br from-indigo-800/40 to-cyan-800/30 rounded-lg flex items-center justify-center">
+              
+              <div className="aspect-video bg-[var(--pink-100)] border-3 border-black flex items-center justify-center mb-4">
                 <div className="text-center">
-                  <div className="text-5xl">🧰</div>
-                  <div className="mt-3 text-slate-200 font-medium">Starter kit — API + CLI</div>
-                  <div className="mt-2 text-sm text-slate-300">₹299 • License & Instant download</div>
+                  <div className="text-6xl mb-2">🎨</div>
+                  <div className="font-black text-lg">UI Kit Pro</div>
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-3">
-                <button className="flex-1 px-4 py-2 rounded-lg bg-white/6 border border-white/8 hover:bg-white/8 transition">Preview</button>
-                <button className="px-4 py-2 rounded-lg bg-linear-to-r from-indigo-500 to-cyan-400 text-white">Buy</button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-black text-2xl">₹2,499</div>
+                  <div className="text-sm text-gray-600">by @designer</div>
+                </div>
+                <button className="px-6 py-3 font-bold uppercase bg-[var(--pink-500)] text-white border-3 border-black shadow-[4px_4px_0px_var(--black)]">
+                  Buy Now
+                </button>
               </div>
             </div>
 
-            {/* small badges under the demo */}
-            <div className="mt-4 flex gap-3 text-xs text-slate-300">
-              <div className="bg-white/4 px-3 py-1 rounded-full">UPI • Razorpay</div>
-              <div className="bg-white/4 px-3 py-1 rounded-full">Auto-delivery</div>
-              <div className="bg-white/4 px-3 py-1 rounded-full">License keys</div>
+            <div className="absolute -bottom-6 -left-6 bg-[var(--yellow-400)] border-3 border-black p-4 shadow-[4px_4px_0px_var(--black)] rotate-[-8deg]">
+              <div className="font-black text-sm">SOLD!</div>
+              <div className="font-bold text-2xl">₹47,500</div>
+              <div className="text-xs">this month</div>
             </div>
           </div>
         </div>
       </div>
-    </header>
+    </section>
   );
 }
 
-/* ---------- small decorative components ---------- */
-function GradientBlob({ className = "" }) {
+function MarqueeSection() {
+  const items = ["TEMPLATES", "EBOOKS", "CODE", "DESIGNS", "PRESETS", "COURSES", "ASSETS", "PLUGINS"];
+  
   return (
-    <div
-      aria-hidden
-      className={`pointer-events-none blur-3xl absolute w-80 h-80 rounded-full bg-linear-to-tr from-indigo-600 via-cyan-400 to-pink-500 ${className}`}
-      style={{ filter: "blur(60px)" }}
-    />
-  );
-}
-
-function AvatarPlaceholder() {
-  return (
-    <div className="w-10 h-10 rounded-full bg-linear-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-xs font-bold">
-      BS
+    <div className="bg-[var(--pink-500)] border-y-3 border-black py-4 overflow-hidden">
+      <div className="flex animate-marquee">
+        {[...items, ...items].map((item, i) => (
+          <span key={i} className="flex items-center gap-8 mx-8">
+            <span className="text-white font-black text-2xl uppercase whitespace-nowrap">{item}</span>
+            <span className="w-3 h-3 bg-white rotate-45" />
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
 
-/* ---------------- Trusted By ---------------- */
-function TrustedBy() {
-  return (
-    <section className="mt-6 mb-10 flex items-center justify-between px-2">
-      <div className="text-slate-300 text-sm">Trusted by indie devs & small teams</div>
-      <div className="flex gap-6 items-center text-slate-300 opacity-80">
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/></svg>
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/></svg>
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- Features ---------------- */
 function FeaturesSection() {
   const features = [
-    { title: "Instant Delivery", desc: "Auto-generated download links & license keys.", icon: "🚀" },
-    { title: "Indian Payments", desc: "UPI, Razorpay & INR billing built-in.", icon: "💸" },
-    { title: "Versioning", desc: "Release version control for your products.", icon: "🔁" },
-    { title: "License Management", desc: "Issue & verify license keys automatically.", icon: "🔐" },
-    { title: "Analytics", desc: "Simple metrics: sales, downloads, revenue.", icon: "📊" },
-    { title: "Developer-first", desc: "CLI, API products, GitHub sync & webhooks.", icon: "🛠️" },
+    { icon: "💸", title: "UPI & Cards", desc: "Accept payments via UPI, cards, and net banking. INR pricing built-in.", color: "var(--pink-200)" },
+    { icon: "⚡", title: "Instant Delivery", desc: "Automatic file delivery. Customers get access immediately after payment.", color: "var(--yellow-400)" },
+    { icon: "🔐", title: "License Keys", desc: "Auto-generate unique license keys for software and digital products.", color: "var(--mint)" },
+    { icon: "📊", title: "Analytics", desc: "Track sales, revenue, and customer insights in real-time.", color: "var(--pink-300)" },
+    { icon: "🎨", title: "Custom Storefront", desc: "Beautiful product pages that convert. No coding required.", color: "var(--yellow-400)" },
+    { icon: "🚀", title: "Zero Fees", desc: "Start free. Only pay when you make sales. No hidden charges.", color: "var(--mint)" },
   ];
 
   return (
-    <section id="features" className="py-12">
-      <h2 className="text-2xl md:text-3xl font-bold mb-6">Features built for creators</h2>
+    <section className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
+      <div className="text-center mb-16">
+        <span className="inline-block px-4 py-2 bg-[var(--pink-200)] border-3 border-black font-bold text-sm uppercase mb-4">Features</span>
+        <h2 className="text-4xl md:text-5xl font-black">Everything you need to sell</h2>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {features.map((f) => (
-          <div key={f.title} className="rounded-2xl p-6 bg-white/3 border border-white/6 backdrop-blur-sm">
-            <div className="text-3xl mb-3">{f.icon}</div>
-            <div className="font-semibold">{f.title}</div>
-            <div className="mt-2 text-sm text-slate-300">{f.desc}</div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {features.map((f, i) => (
+          <div
+            key={i}
+            className="bg-white border-3 border-black p-6 shadow-[4px_4px_0px_var(--black)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[8px_8px_0px_var(--black)] transition-all group"
+            style={{ animationDelay: `${i * 0.1}s` }}
+          >
+            <div 
+              className="w-16 h-16 flex items-center justify-center text-3xl border-3 border-black mb-4 group-hover:rotate-6 transition-transform"
+              style={{ background: f.color }}
+            >
+              {f.icon}
+            </div>
+            <h3 className="font-black text-xl mb-2">{f.title}</h3>
+            <p className="text-gray-600">{f.desc}</p>
           </div>
         ))}
       </div>
@@ -206,153 +188,243 @@ function FeaturesSection() {
   );
 }
 
-/* ---------------- How it works ---------------- */
-function HowItWorks() {
-  const steps = [
-    { title: "Create a product", desc: "Upload code, attach license & set pricing.", idx: 1 },
-    { title: "Publish & share", desc: "Instant store page & shareable links.", idx: 2 },
-    { title: "Deliver & earn", desc: "Auto-delivery, payouts, and analytics.", idx: 3 },
-  ];
-
+function ProductsSection({ products, navigate }) {
   return (
-    <section className="py-12">
-      <h2 className="text-2xl font-bold mb-6">How it works</h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {steps.map((s) => (
-          <div key={s.title} className="p-6 rounded-2xl bg-linear-to-b from-white/3 to-white/2 border border-white/6">
-            <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center font-semibold mb-4">{s.idx}</div>
-            <div className="font-semibold">{s.title}</div>
-            <div className="mt-2 text-sm text-slate-300">{s.desc}</div>
+    <section className="py-20 bg-[var(--pink-100)] border-y-3 border-black">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+          <div>
+            <span className="inline-block px-4 py-2 bg-white border-3 border-black font-bold text-sm uppercase mb-4">Marketplace</span>
+            <h2 className="text-4xl md:text-5xl font-black">Featured Products</h2>
           </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+          <button
+            onClick={() => navigate("/browse")}
+            className="px-6 py-3 font-bold uppercase bg-white border-3 border-black shadow-[4px_4px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_var(--black)] transition-all"
+          >
+            View All →
+          </button>
+        </div>
 
-/* ---------------- Product Carousel (simple) ---------------- */
-function ProductCarousel() {
-  return (
-    <section className="py-12">
-      <h2 className="text-2xl font-bold mb-6">Trending products</h2>
-
-      <div className="overflow-x-auto -mx-6 py-4">
-        <div className="flex gap-6 px-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="min-w-[18rem] bg-white/4 p-5 rounded-2xl border border-white/6">
-              <div className="h-36 rounded-lg flex items-center justify-center bg-linear-to-br from-indigo-800/30 to-cyan-800/20">
-                <span className="text-4xl">📦</span>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.length > 0 ? products.map((product) => (
+            <div
+              key={product.id}
+              onClick={() => navigate(`/product/${product.id}`)}
+              className="bg-white border-3 border-black shadow-[4px_4px_0px_var(--black)] cursor-pointer hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[8px_8px_0px_var(--black)] transition-all"
+            >
+              <div className="aspect-[4/3] bg-[var(--pink-50)] border-b-3 border-black flex items-center justify-center overflow-hidden">
+                {product.thumbnail_url ? (
+                  <img src={product.thumbnail_url} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-5xl">📦</span>
+                )}
               </div>
-              <div className="mt-4">
-                <div className="font-semibold">Product {i + 1}</div>
-                <div className="text-sm text-slate-300 mt-1">Developer tool + sample project</div>
-                <div className="mt-3 flex justify-between items-center">
-                  <div className="text-indigo-300 font-semibold">₹{199 + i * 50}</div>
-                  <button className="px-3 py-1 rounded-md bg-indigo-600 text-white text-sm">Buy</button>
+              <div className="p-4">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {product.category?.slice(0, 2).map((cat, j) => (
+                    <span key={j} className="px-2 py-1 text-xs font-bold uppercase bg-[var(--mint)] border-2 border-black">
+                      {cat}
+                    </span>
+                  ))}
+                </div>
+                <h3 className="font-black text-lg mb-1 line-clamp-1">{product.name}</h3>
+                <p className="text-sm text-gray-600 line-clamp-2 mb-3">{product.description}</p>
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-xl text-[var(--pink-600)]">
+                    {product.currency === 'INR' ? '₹' : '$'}{product.price}
+                  </span>
+                  <button className="px-4 py-2 text-sm font-bold uppercase bg-[var(--pink-500)] text-white border-2 border-black">
+                    View
+                  </button>
                 </div>
               </div>
             </div>
-          ))}
+          )) : (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white border-3 border-black shadow-[4px_4px_0px_var(--black)] animate-pulse">
+                <div className="aspect-[4/3] bg-gray-200 border-b-3 border-black" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-gray-200 w-1/3" />
+                  <div className="h-6 bg-gray-200 w-3/4" />
+                  <div className="h-4 bg-gray-200 w-full" />
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </section>
   );
 }
 
-/* ---------------- Pricing ---------------- */
-function PricingSection({ onChoose }) {
-  const plans = [
-    { title: "Starter", price: "Free", features: ["Single product", "Community support"], highlight: false },
-    { title: "Pro", price: "₹499/mo", features: ["Unlimited products", "Priority support", "Analytics"], highlight: true },
-    { title: "Team", price: "Contact", features: ["Team seats", "Custom SLA", "Enterprise features"], highlight: false },
+function HowItWorksSection() {
+  const steps = [
+    { num: "01", title: "Create Product", desc: "Upload your files, set your price in INR, add a description.", icon: "📦" },
+    { num: "02", title: "Share Link", desc: "Get a beautiful product page. Share it anywhere.", icon: "🔗" },
+    { num: "03", title: "Get Paid", desc: "Customers pay via UPI/Card. Money hits your bank.", icon: "💰" },
   ];
 
   return (
-    <section id="pricing" className="py-12">
-      <h2 className="text-2xl font-bold mb-6">Pricing</h2>
+    <section className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
+      <div className="text-center mb-16">
+        <span className="inline-block px-4 py-2 bg-[var(--yellow-400)] border-3 border-black font-bold text-sm uppercase mb-4">Simple</span>
+        <h2 className="text-4xl md:text-5xl font-black">How it works</h2>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map((p) => (
-          <div
-            key={p.title}
-            className={`rounded-2xl p-6 ${p.highlight ? "bg-indigo-600 text-white shadow-2xl" : "bg-white/4 border border-white/6"}`}
-          >
-            <div className="font-semibold text-lg">{p.title}</div>
-            <div className="text-2xl font-bold mt-2">{p.price}</div>
-            <ul className="mt-4 space-y-2 text-sm text-slate-200">
-              {p.features.map((f) => (
-                <li key={f}>• {f}</li>
+      <div className="grid md:grid-cols-3 gap-8">
+        {steps.map((step, i) => (
+          <div key={i} className="relative">
+            {i < 2 && (
+              <div className="hidden md:block absolute top-12 left-full w-full h-1 bg-black z-0" style={{ width: "calc(100% - 3rem)" }} />
+            )}
+            <div className="relative bg-white border-3 border-black p-8 shadow-[6px_6px_0px_var(--black)]">
+              <div className="absolute -top-4 -left-4 w-12 h-12 bg-[var(--pink-500)] border-3 border-black flex items-center justify-center">
+                <span className="text-white font-black">{step.num}</span>
+              </div>
+              <div className="text-5xl mb-4 pt-4">{step.icon}</div>
+              <h3 className="font-black text-2xl mb-2">{step.title}</h3>
+              <p className="text-gray-600">{step.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PricingSection({ navigate, isAuthenticated }) {
+  return (
+    <section className="py-20 bg-black text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-16">
+          <span className="inline-block px-4 py-2 bg-[var(--pink-500)] border-3 border-white font-bold text-sm uppercase mb-4">Pricing</span>
+          <h2 className="text-4xl md:text-5xl font-black">Start free, scale as you grow</h2>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="bg-white text-black border-3 border-white p-8">
+            <div className="font-black text-sm uppercase text-[var(--pink-500)] mb-2">Free Forever</div>
+            <div className="font-black text-5xl mb-4">₹0</div>
+            <ul className="space-y-3 mb-8">
+              {["Unlimited products", "UPI & Card payments", "Instant delivery", "Basic analytics", "5% transaction fee"].map((item, i) => (
+                <li key={i} className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-[var(--mint)] border-2 border-black flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span>{item}</span>
+                </li>
               ))}
             </ul>
-            <button onClick={onChoose} className={`mt-6 px-4 py-2 rounded-lg ${p.highlight ? "bg-white text-indigo-700" : "bg-indigo-500 text-white"}`}>Choose</button>
+            <button
+              onClick={() => navigate(isAuthenticated ? "/create-product" : "/signup")}
+              className="w-full py-4 font-black uppercase bg-black text-white border-3 border-black shadow-[4px_4px_0px_var(--pink-500)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_var(--pink-500)] transition-all"
+            >
+              Get Started
+            </button>
           </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
-/* ---------------- Testimonials ---------------- */
-function TestimonialsSection() {
-  const reviews = [
-    { name: "Ankit", title: "Fullstack Dev", text: "Made my first sale in 24 hours — payouts were smooth." },
-    { name: "Rekha", title: "UI Designer", text: "Product pages look polished and conversions improved." },
-    { name: "Sahil", title: "API Dev", text: "License key automation saved me time." },
-  ];
-
-  return (
-    <section className="py-12">
-      <h2 className="text-2xl font-bold mb-6">Creators love BitShelf</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {reviews.map((r) => (
-          <div key={r.name} className="p-6 rounded-2xl bg-white/4 border border-white/6">
-            <div className="text-slate-200">“{r.text}”</div>
-            <div className="mt-4 font-semibold">{r.name}</div>
-            <div className="text-sm text-slate-300">{r.title}</div>
+          <div className="bg-[var(--pink-500)] text-white border-3 border-white p-8 relative">
+            <div className="absolute -top-4 -right-4 px-4 py-2 bg-[var(--yellow-400)] text-black border-3 border-black font-bold text-sm uppercase rotate-3">
+              Popular
+            </div>
+            <div className="font-black text-sm uppercase text-[var(--pink-100)] mb-2">Pro</div>
+            <div className="font-black text-5xl mb-4">₹999<span className="text-xl">/mo</span></div>
+            <ul className="space-y-3 mb-8">
+              {["Everything in Free", "0% transaction fee", "Priority support", "Custom domain", "Advanced analytics", "Team collaboration"].map((item, i) => (
+                <li key={i} className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-white border-2 border-black flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => navigate(isAuthenticated ? "/create-product" : "/signup")}
+              className="w-full py-4 font-black uppercase bg-white text-[var(--pink-600)] border-3 border-black shadow-[4px_4px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_var(--black)] transition-all"
+            >
+              Go Pro
+            </button>
           </div>
-        ))}
+        </div>
       </div>
     </section>
   );
 }
 
-/* ---------------- Final CTA ---------------- */
-function FinalCTABanner({ onGetStarted }) {
+function CTASection({ navigate, isAuthenticated }) {
   return (
-    <section className="mt-16 mb-12 p-8 rounded-2xl bg-linear-to-r from-indigo-600 to-cyan-500 text-white text-center">
-      <h3 className="text-2xl font-bold">Ready to sell your first product?</h3>
-      <p className="mt-2 text-sm opacity-90">Sign up and start selling to developers worldwide in minutes.</p>
-      <div className="mt-4 flex justify-center gap-4">
-        <button onClick={onGetStarted} className="px-6 py-3 rounded-xl bg-white text-indigo-700 font-semibold">Get started — Free</button>
-        <a className="px-6 py-3 rounded-xl border border-white/30" href="#pricing">See plans</a>
+    <section className="py-20 px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto bg-[var(--yellow-400)] border-3 border-black p-8 md:p-12 shadow-[8px_8px_0px_var(--black)] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--pink-400)] border-l-3 border-b-3 border-black -translate-y-1/2 translate-x-1/2 rotate-45" />
+        
+        <div className="relative text-center">
+          <h2 className="text-4xl md:text-5xl font-black mb-4">Ready to start selling?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">
+            Join thousands of Indian creators selling their digital products. It takes less than 2 minutes to get started.
+          </p>
+          <button
+            onClick={() => navigate(isAuthenticated ? "/create-product" : "/signup")}
+            className="px-10 py-5 text-xl font-black uppercase bg-[var(--pink-500)] text-white border-3 border-black shadow-[6px_6px_0px_var(--black)] hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_var(--black)] transition-all"
+          >
+            Create Your First Product →
+          </button>
+        </div>
       </div>
     </section>
   );
 }
 
-/* ---------------- Footer ---------------- */
 function Footer() {
   return (
-    <footer className="bg-slate-900 border-t border-white/6 py-12">
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <div className="text-xl font-bold">BitShelf</div>
-          <div className="mt-2 text-slate-300">Sell digital products to developers. Instant delivery • License keys • INR payouts</div>
+    <footer className="bg-black text-white py-16 border-t-3 border-black">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid md:grid-cols-4 gap-12">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <img 
+                src="/favicon_io/android-chrome-192x192.png" 
+                alt="AnarchyBay Logo" 
+                className="w-12 h-12 border-3 border-white"
+              />
+              <span className="font-display text-2xl">AnarchyBay</span>
+            </div>
+            <p className="text-gray-400">
+              The simplest way to sell digital products in India. UPI payments, instant delivery.
+            </p>
+          </div>
+
+          {[
+            { title: "Product", links: ["Features", "Pricing", "API"] },
+            { title: "Company", links: ["About", "Blog", "Careers"] },
+            { title: "Support", links: ["Help Center", "Contact", "Terms"] },
+          ].map((col, i) => (
+            <div key={i}>
+              <h4 className="font-black text-sm uppercase mb-4">{col.title}</h4>
+              <ul className="space-y-2">
+                {col.links.map((link, j) => (
+                  <li key={j}>
+                    <a href="#" className="text-gray-400 hover:text-[var(--pink-400)] transition-colors">{link}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div>
-          <div className="font-semibold text-slate-200">Company</div>
-          <ul className="mt-3 space-y-2 text-slate-400 text-sm">
-            <li>About</li>
-            <li>Careers</li>
-            <li>Blog</li>
-          </ul>
-        </div>
-
-        <div>
-          <div className="font-semibold text-slate-200">Contact</div>
-          <div className="mt-3 text-slate-400 text-sm">hello@bitshelf.example</div>
+        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="text-gray-500 text-sm">© 2025 AnarchyBay. Made with 💖 in India.</div>
+          <div className="flex gap-4">
+            {["Twitter", "GitHub", "Discord"].map((social, i) => (
+              <a key={i} href="#" className="px-4 py-2 text-sm font-bold uppercase border-2 border-gray-700 hover:border-[var(--pink-500)] hover:text-[var(--pink-400)] transition-all">
+                {social}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </footer>

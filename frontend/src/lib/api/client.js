@@ -10,8 +10,10 @@ export const getAccessToken = () => storage?.getItem(ACCESS_TOKEN_KEY) ?? null;
 
 export const saveSessionTokens = (session) => {
   if (!storage || !session) return;
-  if (session.access_token) storage.setItem(ACCESS_TOKEN_KEY, session.access_token);
-  if (session.refresh_token) storage.setItem(REFRESH_TOKEN_KEY, session.refresh_token);
+  const accessToken = session.access_token || session.accessToken;
+  const refreshToken = session.refresh_token || session.refreshToken;
+  if (accessToken) storage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  if (refreshToken) storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
 };
 
 export const clearSessionTokens = () => {
@@ -56,8 +58,10 @@ const request = async (
 
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = data?.error || data?.message || `Request failed with status ${response.status}`;
-    throw new Error(message);
+    const errorMessage = typeof data?.error === 'object' 
+      ? data?.error?.message || JSON.stringify(data.error)
+      : data?.error || data?.message || `Request failed with status ${response.status}`;
+    throw new Error(errorMessage);
   }
 
   return data;
@@ -81,4 +85,3 @@ const api = {
 };
 
 export default api;
-

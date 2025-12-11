@@ -33,12 +33,11 @@ export const useAuth = () => {
   return {
     isAuthenticated,
     user,
+    profile,
     role: profile?.role || null,
     loading: userLoading || profileLoading,
-    name: profile?.name || null,
+    name: profile?.display_name || profile?.name || null,
+    avatar: profile?.profile_image_url || null,
     logout,
   };
 };
-
-
-
