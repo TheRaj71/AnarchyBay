@@ -88,9 +88,33 @@ app.use(helmet({
 app.use(compression());
 
 // CORS configuration
+const allowedOrigins = [
+  CLIENT_ORIGIN,
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://anarchy-bay.vercel.app',
+];
+
+if (process.env.NGROK_URL) {
+  allowedOrigins.push(process.env.NGROK_URL);
+}
+
 app.use(cors({
-    origin: CLIENT_ORIGIN,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: function(origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin matches allowed origins, ngrok pattern, or vercel pattern
+      if (allowedOrigins.includes(origin) || 
+          /\.ngrok-free\.app$/.test(origin) || 
+          /\.ngrok\.io$/.test(origin) ||
+          /\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
 }));
 
