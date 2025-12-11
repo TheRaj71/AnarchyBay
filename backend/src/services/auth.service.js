@@ -23,6 +23,9 @@ import {
 } from '../repositories/refreshToken.repository.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 
+// Frontend URL for redirects
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 /**
  * Create user profile for OAuth users
  * @param {Object} userData - User data from OAuth
@@ -64,7 +67,7 @@ export const signUp = async ({ email, password, name, role = 'customer' }) => {
     password,
     options: {
       data: { name, role },
-      emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?type=email_verified`,
+      emailRedirectTo: `${FRONTEND_URL}/auth/callback?type=email_verified`,
     }
   });
 
@@ -193,7 +196,7 @@ export const resendVerificationEmail = async (email) => {
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?type=email_verified`,
+      emailRedirectTo: `${FRONTEND_URL}/auth/callback?type=email_verified`,
     }
   });
 

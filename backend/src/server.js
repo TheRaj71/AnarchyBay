@@ -34,6 +34,33 @@ import reviewRoutes from './routes/review.route.js';
 import wishlistRoutes from './routes/wishlist.route.js';
 import cartRoutes from './routes/cart.route.js';
 
+// Keep-alive function to prevent Render from sleeping
+const keepAwake = () => {
+  const RENDER_URL = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL;
+  
+  if (!RENDER_URL) {
+    logger.info('No RENDER_EXTERNAL_URL or BACKEND_URL set, skipping keep-alive');
+    return;
+  }
+
+  const ping = async () => {
+    try {
+      const response = await fetch(`${RENDER_URL}/health-check`);
+      logger.info(`Keep-alive ping: ${response.status}`);
+    } catch (error) {
+      logger.error(`Keep-alive ping failed: ${error.message}`);
+    }
+    
+    // Random sleep between 3-14 minutes
+    const sleepTime = (Math.random() * 11 + 3) * 60 * 1000;
+    setTimeout(ping, sleepTime);
+  };
+
+  // Start pinging after initial delay
+  setTimeout(ping, 60000); // First ping after 1 minute
+  logger.info('Keep-alive service started');
+};
+
 const PORT = process.env.PORT || 3000;
 const CLIENT_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173';
 
@@ -119,6 +146,11 @@ if (!process.env.VERCEL) {
   const server = app.listen(PORT, () => {
       logger.info(`Server listening on http://localhost:${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      
+      // Start keep-alive for Render
+      if (process.env.RENDER) {
+        keepAwake();
+      }
   });
 
   // Graceful shutdown
