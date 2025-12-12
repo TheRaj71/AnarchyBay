@@ -12,7 +12,7 @@ export default function LandingPage() {
     fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/products/list`)
       .then(res => res.json())
       .then(data => setProducts(data.products?.slice(0, 6) || []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
@@ -38,7 +38,7 @@ function HeroSection({ navigate, isAuthenticated }) {
   return (
     <section className="relative overflow-hidden py-12 md:py-20">
       <div className="absolute inset-0 pattern-dots opacity-30" />
-      
+
       <div className="absolute top-20 right-10 w-32 h-32 bg-[var(--pink-300)] border-3 border-black rotate-12 animate-float hidden lg:block" />
       <div className="absolute bottom-20 left-10 w-24 h-24 bg-[var(--yellow-400)] border-3 border-black -rotate-6 animate-float hidden lg:block" style={{ animationDelay: "1s" }} />
       <div className="absolute top-40 left-1/4 w-16 h-16 bg-[var(--mint)] border-3 border-black rotate-45 animate-bounce-subtle hidden lg:block" />
@@ -58,7 +58,7 @@ function HeroSection({ navigate, isAuthenticated }) {
             </h1>
 
             <p className="text-xl text-gray-700 max-w-lg leading-relaxed">
-              The simplest way to sell templates, code, ebooks & digital assets. 
+              The simplest way to sell templates, code, ebooks & digital assets.
               <span className="font-bold"> UPI payments, instant delivery, zero hassle.</span>
             </p>
 
@@ -101,7 +101,7 @@ function HeroSection({ navigate, isAuthenticated }) {
                 </div>
                 <span className="text-xs font-bold uppercase text-gray-500">AnarchyBay Store</span>
               </div>
-              
+
               <div className="aspect-video bg-[var(--pink-100)] border-3 border-black flex items-center justify-center mb-4">
                 <div className="text-center">
                   <div className="text-6xl mb-2">🎨</div>
@@ -134,7 +134,7 @@ function HeroSection({ navigate, isAuthenticated }) {
 
 function MarqueeSection() {
   const items = ["TEMPLATES", "EBOOKS", "CODE", "DESIGNS", "PRESETS", "COURSES", "ASSETS", "PLUGINS"];
-  
+
   return (
     <div className="bg-[var(--pink-500)] border-y-3 border-black py-4 overflow-hidden">
       <div className="flex animate-marquee">
@@ -173,7 +173,7 @@ function FeaturesSection() {
             className="bg-white border-3 border-black p-6 shadow-[4px_4px_0px_var(--black)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[8px_8px_0px_var(--black)] transition-all group"
             style={{ animationDelay: `${i * 0.1}s` }}
           >
-            <div 
+            <div
               className="w-16 h-16 flex items-center justify-center text-3xl border-3 border-black mb-4 group-hover:rotate-6 transition-transform"
               style={{ background: f.color }}
             >
@@ -361,7 +361,7 @@ function CTASection({ navigate, isAuthenticated }) {
     <section className="py-20 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto bg-[var(--yellow-400)] border-3 border-black p-8 md:p-12 shadow-[8px_8px_0px_var(--black)] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--pink-400)] border-l-3 border-b-3 border-black -translate-y-1/2 translate-x-1/2 rotate-45" />
-        
+
         <div className="relative text-center">
           <h2 className="text-4xl md:text-5xl font-black mb-4">Ready to start selling?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
@@ -386,9 +386,9 @@ function Footer() {
         <div className="grid md:grid-cols-4 gap-12">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img 
-                src="/favicon_io/android-chrome-192x192.png" 
-                alt="AnarchyBay Logo" 
+              <img
+                src="/favicon_io/android-chrome-192x192.png"
+                alt="AnarchyBay Logo"
                 className="w-12 h-12 border-3 border-white"
               />
               <span className="font-display text-2xl">AnarchyBay</span>
@@ -399,16 +399,42 @@ function Footer() {
           </div>
 
           {[
-            { title: "Product", links: ["Features", "Pricing", "API"] },
-            { title: "Company", links: ["About", "Blog", "Careers"] },
-            { title: "Support", links: ["Help Center", "Contact", "Terms"] },
+            {
+              title: "Product",
+              links: [
+                { name: "Features", href: "#" },
+                { name: "Pricing", href: "#" },
+                { name: "API", href: "#" } // Convert to object
+              ]
+            },
+            {
+              title: "Company",
+              links: [
+                { name: "About", href: "/about" }, // Add /about route
+                { name: "Blog", href: "#" },
+                { name: "Careers", href: "#" } // Convert to object
+              ]
+            },
+            {
+              title: "Support",
+              links: [
+                { name: "Help Center", href: "/help-center" },
+                { name: "Contact", href: "/contact" },
+                { name: "Terms", href: "/term" }
+              ]
+            },
           ].map((col, i) => (
             <div key={i}>
-              <h4 className="font-black text-sm uppercase mb-4">{col.title}</h4>
+              <h4 className="font-black text-sm uppercase mb-4 text-[var(--yellow-400)]">{col.title}</h4>
               <ul className="space-y-2">
                 {col.links.map((link, j) => (
                   <li key={j}>
-                    <a href="#" className="text-gray-400 hover:text-[var(--pink-400)] transition-colors">{link}</a>
+                    <a
+                      href={link.href}
+                      className="text-gray-400 hover:text-[var(--pink-400)] transition-colors"
+                    >
+                      {link.name}
+                    </a>
                   </li>
                 ))}
               </ul>

@@ -23,6 +23,10 @@ import LoginPage from './components/auth/LoginPage.jsx';
 import AuthStatusPage from './components/auth/AuthStatusPage.jsx';
 import AuthCallbackPage from './components/auth/AuthCallbackPage.jsx';
 import VerifyEmailPage from './components/auth/VerifyEmailPage.jsx';
+import ContactPage from './components/ContactPage.jsx';
+import HelpCenterPage from './components/HelpCenterPage.jsx';
+import AboutPage from './components/AboutPage.jsx';
+import TermsPage from './components/TermPage.jsx';
 
 
 function App() {
@@ -51,6 +55,10 @@ function App() {
         <Route path='/seller/:sellerId' element={<SellerPage />} />
         <Route path='/download/:purchaseId' element={<DownloadPage />} />
         <Route path='/checkout/success' element={<CheckoutSuccessPage />} />
+        <Route path='/contact' element={<ContactPage/>} />
+        <Route path='/help-center' element={<HelpCenterPage/>} />
+        <Route path='/about' element={<AboutPage/>}></Route>
+        <Route path='/term' element={<TermsPage/>}></Route>
       </Routes>
     </BrowserRouter>
   )
