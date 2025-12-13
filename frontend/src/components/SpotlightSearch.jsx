@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search01Icon, ShoppingBag02Icon, UserIcon, TagIcon } from "hugeicons-react";
+import { Search01Icon, ShoppingBag02Icon, UserIcon, Hashtag01Icon } from "hugeicons-react";
 
 const BANGS = {
   "!p": { type: "products", label: "Products", icon: ShoppingBag02Icon, endpoint: "/api/products/list" },
   "!c": { type: "creators", label: "Creators", icon: UserIcon, endpoint: "/api/profile/search" },
-  "!t": { type: "tags", label: "Tags", icon: TagIcon, endpoint: "/api/products/list" },
+  "!t": { type: "tags", label: "Tags", icon: Hashtag01Icon, endpoint: "/api/products/list" },
 };
 
 // Parse advanced search filters
