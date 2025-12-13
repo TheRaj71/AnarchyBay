@@ -29,6 +29,19 @@ export const getProfileByUsername = async (username) => {
         .single();
 }
 
+export const searchProfiles = async (query, options = {}) => {
+    const { page = 1, limit = 20 } = options;
+    const offset = (page - 1) * limit;
+
+    return await supabase
+        .from("profiles")
+        .select("id, name, username, display_name, bio, profile_image_url, created_at, role", { count: "exact" })
+        .or(`name.ilike.%${query}%,username.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .eq("role", "seller")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+}
+
 export const updateUserProfile = async ({ userId, updates }) => {
     const updateData = {
         ...updates,

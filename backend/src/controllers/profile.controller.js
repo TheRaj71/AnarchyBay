@@ -1,5 +1,5 @@
 import { supabase, handleSupabaseError } from "../lib/supabase.js";
-import { createUserProfile, getUserProfile, updateUserProfile, getTotalUsers, getPublicProfile, getProfileByUsername, checkUsernameAvailable } from "../services/profile.service.js";
+import { createUserProfile, getUserProfile, updateUserProfile, getTotalUsers, getPublicProfile, getProfileByUsername, checkUsernameAvailable, searchProfiles } from "../services/profile.service.js";
 import { findProductsByCreator } from "../repositories/product.repository.js";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -287,6 +287,40 @@ export const uploadProfileImageController = async (req, res) => {
         });
     } catch (error) {
         console.error("Error in uploadProfileImage controller: ", error);
+        return res.status(500).json({
+            error: "Internal server error"
+        });
+    }
+}
+
+export const searchProfilesController = async (req, res) => {
+    try {
+        const { q } = req.query;
+        
+        if (!q || q.trim() === "") {
+            return res.status(200).json({ profiles: [] });
+        }
+
+        const options = {
+            page: parseInt(req.query.page) || 1,
+            limit: parseInt(req.query.limit) || 20,
+        };
+
+        const { data, error, count } = await searchProfiles(q, options);
+        
+        if (error) {
+            return handleSupabaseError(res, error);
+        }
+
+        return res.status(200).json({
+            profiles: data || [],
+            total: count || 0,
+            page: options.page,
+            limit: options.limit,
+            totalPages: Math.ceil((count || 0) / options.limit),
+        });
+    } catch (error) {
+        console.error("Error in searchProfiles controller: ", error);
         return res.status(500).json({
             error: "Internal server error"
         });

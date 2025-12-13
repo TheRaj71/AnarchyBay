@@ -114,11 +114,22 @@ export default function SpotlightSearch({ isOpen, onClose }) {
             })),
           }));
         } else {
-          setState(s => ({ ...s, activeFilter: "products" }));
-          let url = `${API_URL}/api/products/list?search=${encodeURIComponent(parsed.query)}`;
-          if (parsed.category) url += `&category=${encodeURIComponent(parsed.category)}`;
-          if (parsed.maxPrice) url += `&maxPrice=${parsed.maxPrice}`;
-          if (parsed.sort) url += `&sort=${parsed.sort}`;
+          const filterType = parsed.sort ? (parsed.sort === "newest" ? "new" : "top") : 
+                           parsed.category ? "category" : 
+                           parsed.maxPrice ? "price" : 
+                           "products";
+          setState(s => ({ ...s, activeFilter: filterType }));
+          
+          let url = `${API_URL}/api/products/list`;
+          const params = new URLSearchParams();
+          
+          if (parsed.query) params.append("search", parsed.query);
+          if (parsed.category) params.append("category", parsed.category);
+          if (parsed.maxPrice) params.append("maxPrice", parsed.maxPrice);
+          if (parsed.sort) params.append("sort", parsed.sort);
+          
+          const queryString = params.toString();
+          if (queryString) url += `?${queryString}`;
           
           const res = await fetch(url);
           const data = await res.json();

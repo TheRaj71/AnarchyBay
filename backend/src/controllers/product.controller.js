@@ -93,6 +93,18 @@ export const getProductController = async (req, res) => {
 
 export const getProductsController = async (req, res) => {
   try {
+    const sortParam = req.query.sort;
+    let sortBy = req.query.sortBy || "created_at";
+    let sortOrder = req.query.sortOrder || "desc";
+
+    if (sortParam === "newest") {
+      sortBy = "created_at";
+      sortOrder = "desc";
+    } else if (sortParam === "rating") {
+      sortBy = "rating_avg";
+      sortOrder = "desc";
+    }
+
     const options = {
       page: parseInt(req.query.page) || 1,
       limit: parseInt(req.query.limit) || 20,
@@ -100,8 +112,8 @@ export const getProductsController = async (req, res) => {
       minPrice: req.query.minPrice ? parseFloat(req.query.minPrice) : undefined,
       maxPrice: req.query.maxPrice ? parseFloat(req.query.maxPrice) : undefined,
       search: req.query.search,
-      sortBy: req.query.sortBy || "created_at",
-      sortOrder: req.query.sortOrder || "desc",
+      sortBy,
+      sortOrder,
       featured: req.query.featured === "true" ? true : undefined,
       tags: req.query.tags ? req.query.tags.split(",") : undefined,
     };

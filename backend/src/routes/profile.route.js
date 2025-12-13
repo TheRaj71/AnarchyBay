@@ -8,7 +8,8 @@ import {
     getPublicProfileController,
     getProfileByUsernameController,
     getSellerProductsController,
-    checkUsernameController
+    checkUsernameController,
+    searchProfilesController
 } from "../controllers/profile.controller.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { validate } from "../middleware/validation.js";
@@ -24,6 +25,7 @@ router.get("/me", requireAuth, getMyProfileController);
 router.put("/me", requireAuth, validate(updateProfileSchema), updateMyProfileController);
 router.post("/me/image", requireAuth, upload.single('image'), handleMulterError, uploadProfileImageController);
 
+router.get("/search", searchProfilesController);
 router.get("/check-username/:username", optionalAuth, checkUsernameController);
 router.get("/u/:username", getProfileByUsernameController);
 router.get("/user/:userId", getPublicProfileController);
