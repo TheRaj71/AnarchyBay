@@ -19,7 +19,7 @@ const FILTERS = [
   { id: "top", label: "Top", icon: AnalyticsUpIcon },
 ];
 
-const initialState = { query: "", results: [], loading: false, selectedIndex: 0, activeFilter: null };
+const initialState = { query: "", results: [], loading: false, selectedIndex: 0, activeFilter: "products" };
 
 export default function SpotlightSearch({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -239,77 +239,68 @@ export default function SpotlightSearch({ isOpen, onClose }) {
           })}
         </div>
 
-        {!activeFilter && (
-          <div className="px-6 py-8 text-center">
-            <div className="text-6xl mb-4">🔍</div>
-            <p className="text-base text-gray-500">Select a filter to start browsing</p>
-          </div>
-        )}
-
-        {activeFilter && (
-          <div className="max-h-[60vh] overflow-y-auto" ref={resultsRef}>
-            {loading ? (
-              <div className="px-6 py-16 flex flex-col items-center justify-center">
-                <div className="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-3" />
-                <p className="text-sm text-gray-500">Loading...</p>
-              </div>
-            ) : results.length > 0 ? (
-              <div className="py-2">
-                {results.map((item, i) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleSelect(item)}
-                    className={`w-full px-6 py-5 flex items-center gap-4 text-left transition-all ${
-                      i === selectedIndex 
-                        ? "bg-blue-50 border-l-4 border-blue-500" 
-                        : "hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="w-16 h-16 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
-                      {item.image ? (
-                        <img src={item.image} alt="" className="w-full h-full object-cover" />
-                      ) : item.type === "seller" ? (
-                        <span className="text-2xl font-black text-gray-600">
-                          {item.name?.charAt(0)?.toUpperCase()}
+        <div className="max-h-[60vh] overflow-y-auto" ref={resultsRef}>
+          {loading ? (
+            <div className="px-6 py-16 flex flex-col items-center justify-center">
+              <div className="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-3" />
+              <p className="text-sm text-gray-500">Loading...</p>
+            </div>
+          ) : results.length > 0 ? (
+            <div className="py-2">
+              {results.map((item, i) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleSelect(item)}
+                  className={`w-full px-6 py-5 flex items-center gap-4 text-left transition-all ${
+                    i === selectedIndex 
+                      ? "bg-blue-50 border-l-4 border-blue-500" 
+                      : "hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="w-16 h-16 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                    {item.image ? (
+                      <img src={item.image} alt="" className="w-full h-full object-cover" />
+                    ) : item.type === "seller" ? (
+                      <span className="text-2xl font-black text-gray-600">
+                        {item.name?.charAt(0)?.toUpperCase()}
+                      </span>
+                    ) : item.type === "category" ? (
+                      <Tag01Icon size={28} className="text-gray-400" strokeWidth={2} />
+                    ) : item.type === "price" ? (
+                      <DollarCircleIcon size={28} className="text-gray-400" strokeWidth={2} />
+                    ) : (
+                      <ShoppingBasket01Icon size={28} className="text-gray-400" strokeWidth={2} />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-900 truncate text-lg">{item.name}</div>
+                    <div className="text-sm text-gray-500 truncate mt-1">{item.description}</div>
+                  </div>
+                  {item.type === "product" && (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-lg font-bold text-gray-900">
+                        {item.currency === "INR" ? "₹" : "$"}{item.price}
+                      </span>
+                      {item.category && (
+                        <span className="text-xs px-2 py-1 bg-blue-500 text-white rounded-md font-bold uppercase tracking-wide">
+                          {item.category}
                         </span>
-                      ) : item.type === "category" ? (
-                        <Tag01Icon size={28} className="text-gray-400" strokeWidth={2} />
-                      ) : item.type === "price" ? (
-                        <DollarCircleIcon size={28} className="text-gray-400" strokeWidth={2} />
-                      ) : (
-                        <ShoppingBasket01Icon size={28} className="text-gray-400" strokeWidth={2} />
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900 truncate text-lg">{item.name}</div>
-                      <div className="text-sm text-gray-500 truncate mt-1">{item.description}</div>
-                    </div>
-                    {item.type === "product" && (
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="text-lg font-bold text-gray-900">
-                          {item.currency === "INR" ? "₹" : "$"}{item.price}
-                        </span>
-                        {item.category && (
-                          <span className="text-xs px-2 py-1 bg-blue-500 text-white rounded-md font-bold uppercase tracking-wide">
-                            {item.category}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : showSuggestion ? (
-              <div className="px-6 py-12 text-center">
-                <div className="text-5xl mb-4">💡</div>
-                <div className="font-semibold text-xl mb-2 text-gray-900">No results found</div>
-                <p className="text-sm text-gray-500 mb-6">
-                  Try another filter or search term
-                </p>
-              </div>
-            ) : null}
-          </div>
-        )}
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : showSuggestion ? (
+            <div className="px-6 py-12 text-center">
+              <div className="text-5xl mb-4">💡</div>
+              <div className="font-semibold text-xl mb-2 text-gray-900">No results found</div>
+              <p className="text-sm text-gray-500 mb-6">
+                Try another filter or search term
+              </p>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
