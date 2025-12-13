@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/auth/use-auth";
 import NavBar from "./NavBar";
 
@@ -399,16 +399,16 @@ function Footer() {
           </div>
 
           {[
-            { title: "Product", links: ["Features", "Pricing", "API"] },
-            { title: "Company", links: ["About", "Blog", "Careers"] },
-            { title: "Support", links: ["Help Center", "Contact", "Terms"] },
+            { title: "Product", links: [["Features", "#"], ["Pricing", "#"], ["API", "#"]] },
+            { title: "Company", links: [["About", "/about"], ["Blog", "#"], ["Careers", "#"]] },
+            { title: "Support", links: [["Help Center", "#"], ["Contact", "#"], ["Terms", "#"]] },
           ].map((col, i) => (
             <div key={i}>
               <h4 className="font-black text-sm uppercase mb-4">{col.title}</h4>
               <ul className="space-y-2">
-                {col.links.map((link, j) => (
+                {col.links.map(([label, href], j) => (
                   <li key={j}>
-                    <a href="#" className="text-gray-400 hover:text-[var(--pink-400)] transition-colors">{link}</a>
+                    <Link to={href} className="text-gray-400 hover:text-[var(--pink-400)] transition-colors">{label}</Link>
                   </li>
                 ))}
               </ul>
