@@ -201,7 +201,6 @@ export default function SpotlightSearch({ isOpen, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center px-6 py-5 border-b border-gray-100">
-          <Search01Icon size={24} className="text-gray-400 mr-4 flex-shrink-0" strokeWidth={2.5} />
           <input
             ref={inputRef}
             type="text"
@@ -224,13 +223,13 @@ export default function SpotlightSearch({ isOpen, onClose }) {
               <button
                 key={filter.id}
                 onClick={() => handleFilterClick(filter)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all flex-shrink-0 ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all flex-shrink-0 ${
                   isActive 
                     ? "bg-blue-500 text-white shadow-lg scale-105" 
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105"
                 }`}
               >
-                <Icon size={16} strokeWidth={2.5} />
+                <Icon size={18} strokeWidth={2.5} />
                 {filter.label}
               </button>
             );
