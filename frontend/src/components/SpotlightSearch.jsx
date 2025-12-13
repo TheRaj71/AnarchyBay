@@ -6,8 +6,8 @@ import {
   UserIcon,
   Tag01Icon,
   DollarCircleIcon,
-  Sparkles01Icon,
-  TrendingUpIcon
+  SparklesIcon,
+  AnalyticsUpIcon
 } from "hugeicons-react";
 
 const FILTERS = [
@@ -15,8 +15,8 @@ const FILTERS = [
   { id: "creators", label: "Creators", icon: UserIcon, search: "!s " },
   { id: "category", label: "Category", icon: Tag01Icon, search: "!c " },
   { id: "price", label: "Price", icon: DollarCircleIcon, search: "!p " },
-  { id: "new", label: "New", icon: Sparkles01Icon, search: "!new " },
-  { id: "top", label: "Top", icon: TrendingUpIcon, search: "!top " },
+  { id: "new", label: "New", icon: SparklesIcon, search: "!new " },
+  { id: "top", label: "Top", icon: AnalyticsUpIcon, search: "!top " },
 ];
 
 const initialState = { query: "", results: [], loading: false, selectedIndex: 0, activeFilter: null };
