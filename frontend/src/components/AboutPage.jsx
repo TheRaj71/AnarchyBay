@@ -13,8 +13,8 @@ export default function AboutPage() {
             </h1>
             <img 
               className="flower mx-auto my-6 h-32 sm:h-40 md:h-48 object-contain"
-              src="https://raw.githubusercontent.com/melipi/img-repo/main/flower-silhouette.png"
-              alt="flower silhouette"
+              src="/favicon_io/android-chrome-512x512.png"
+              alt="AnarchyBay logo"
             />
             <h2 className="text-lg md:text-xl font-bold uppercase tracking-wide text-black">A marketplace for everyone</h2>
           </div>
