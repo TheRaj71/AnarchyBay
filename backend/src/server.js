@@ -92,7 +92,6 @@ const allowedOrigins = [
   CLIENT_ORIGIN,
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://anarchy-bay.vercel.app',
 ];
 
 if (process.env.NGROK_URL) {

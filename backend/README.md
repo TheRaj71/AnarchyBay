@@ -1,6 +1,6 @@
-# BitShelf Backend
+# Anarchy Bay Backend
 
-The backend service for BitShelf, a platform for discovering and exploring trending digital content.
+The backend service for Anarchy Bay, a platform for discovering and exploring trending digital content.
 
 ## Overview
 

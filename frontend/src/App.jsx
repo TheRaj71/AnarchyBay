@@ -15,6 +15,7 @@ import SellerPage from './components/SellerPage.jsx';
 import CartPage from './components/CartPage.jsx';
 import ProfileSettings from './components/ProfileSettings.jsx';
 import AboutPage from './components/AboutPage.jsx';
+import CareersPage from './components/CareersPage.jsx';
 import { Toaster } from 'sonner';
 
 import "swiper/css";
@@ -35,6 +36,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/browse" element={<BrowsePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/careers" element={<CareersPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path='/login' element={<LoginPage />} />
         <Route path='/auth/callback' element={<AuthCallbackPage />} />

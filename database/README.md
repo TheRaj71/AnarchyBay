@@ -1,4 +1,4 @@
-# BitShelf Database
+# Anarchy Bay Database
 
 This folder contains the Supabase local project and SQL migrations.
 

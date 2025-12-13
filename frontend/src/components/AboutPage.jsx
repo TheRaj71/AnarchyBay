@@ -14,14 +14,14 @@ export default function AboutPage() {
             <img 
               className="flower mx-auto my-6 h-32 sm:h-40 md:h-48 object-contain"
               src="/favicon_io/android-chrome-512x512.png"
-              alt="AnarchyBay logo"
+              alt="Anarchy Bay logo"
             />
             <h2 className="text-lg md:text-xl font-bold uppercase tracking-wide text-black">A marketplace for everyone</h2>
           </div>
 
           <div className="columns-1 md:columns-2 gap-8 text-justify leading-relaxed text-base md:text-lg space-y-4">
             <p>
-              Welcome to AnarchyBay, where freedom meets commerce. In a world dominated by gatekeepers and intermediaries, we believe in something different. AnarchyBay is a decentralized marketplace built on the principles of freedom, transparency, and community.
+              Welcome to Anarchy Bay, where freedom meets commerce. In a world dominated by gatekeepers and intermediaries, we believe in something different. Anarchy Bay is a decentralized marketplace built on the principles of freedom, transparency, and community.
             </p>
 
             <p>
@@ -29,7 +29,7 @@ export default function AboutPage() {
             </p>
 
             <p>
-              Whether you're a creator selling digital art, a craftsperson offering handmade goods, or an entrepreneur launching your first product, AnarchyBay provides the tools and freedom you need to thrive. We don't believe in restrictive policies or hidden agendas—just honest, peer-to-peer exchange.
+              Whether you're a creator selling digital art, a craftsperson offering handmade goods, or an entrepreneur launching your first product, Anarchy Bay provides the tools and freedom you need to thrive. We don't believe in restrictive policies or hidden agendas—just honest, peer-to-peer exchange.
             </p>
 
             <p>
@@ -37,7 +37,7 @@ export default function AboutPage() {
             </p>
 
             <p>
-              Our community is our strength. From tech enthusiasts to vintage collectors, from indie artists to sustainable living advocates—AnarchyBay brings together diverse voices and visions. We celebrate individuality and encourage authentic expression.
+              Our community is our strength. From tech enthusiasts to vintage collectors, from indie artists to sustainable living advocates—Anarchy Bay brings together diverse voices and visions. We celebrate individuality and encourage authentic expression.
             </p>
 
             <p>
@@ -45,7 +45,7 @@ export default function AboutPage() {
             </p>
 
             <p>
-              Join us in reimagining what a marketplace can be. Buy freely. Sell fearlessly. Connect authentically. This is AnarchyBay—where your commerce, your rules. Together, we're building an economy that puts power back in the hands of individuals, one transaction at a time.
+              Join us in reimagining what a marketplace can be. Buy freely. Sell fearlessly. Connect authentically. This is Anarchy Bay—where your commerce, your rules. Together, we're building an economy that puts power back in the hands of individuals, one transaction at a time.
             </p>
           </div>
         </div>
