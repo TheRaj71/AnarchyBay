@@ -209,6 +209,24 @@ export default function NavBar() {
                   </button>
                 );
               })}
+              {isAuthenticated && (
+                <>
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className={`w-full px-4 py-4 text-base font-bold uppercase text-left border-b-3 border-black hover:bg-[var(--yellow-400)] ${
+                      isActive("/dashboard") ? "bg-[var(--yellow-400)]" : ""
+                    }`}
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => { logout(); setMobileOpen(false); }}
+                    className="w-full px-4 py-4 text-base font-bold uppercase text-left hover:bg-red-100 text-red-600 border-b-3 border-black"
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
               {!isAuthenticated && (
                 <>
                   <button

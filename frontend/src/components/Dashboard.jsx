@@ -48,7 +48,7 @@ export default function Dashboard() {
     if (isAuthenticated) {
       const token = getAccessToken();
       Promise.all([
-        fetch(`${API_URL}/api/products/my-products`, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json()),
+        fetch(`${API_URL}/api/products/my/list`, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json()),
         fetch(`${API_URL}/api/wishlist`, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json()),
       ]).then(([productsData, wishlistData]) => {
         setMyProducts(productsData.products || []);
