@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search01Icon } from "hugeicons-react";
+import { Search01Icon, ShoppingBag02Icon, UserIcon, TagIcon } from "hugeicons-react";
 
-const initialState = { query: "", results: [], loading: false, selectedIndex: 0 };
+const BANGS = {
+  "!p": { type: "products", label: "Products", icon: ShoppingBag02Icon, endpoint: "/api/products/list" },
+  "!c": { type: "creators", label: "Creators", icon: UserIcon, endpoint: "/api/profile/search" },
+  "!t": { type: "tags", label: "Tags", icon: TagIcon, endpoint: "/api/products/list" },
+};
+
+const initialState = { query: "", results: [], loading: false, selectedIndex: 0, activeBang: null };
 
 export default function SpotlightSearch({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -10,7 +16,7 @@ export default function SpotlightSearch({ isOpen, onClose }) {
   const resultsRef = useRef(null);
 
   const [state, setState] = useState(initialState);
-  const { query, results, loading, selectedIndex } = state;
+  const { query, results, loading, selectedIndex, activeBang } = state;
 
   useEffect(() => {
     if (isOpen) {
@@ -33,42 +39,107 @@ export default function SpotlightSearch({ isOpen, onClose }) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  const fetchResults = useCallback(async (searchQuery) => {
-    if (!searchQuery.trim()) {
+  const fetchResults = useCallback(async (searchQuery, bangType) => {
+    if (!searchQuery.trim() && !bangType) {
       setState(s => ({ ...s, results: [], loading: false }));
       return;
     }
 
     setState(s => ({ ...s, loading: true }));
+    
     try {
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-      const res = await fetch(`${API_URL}/api/products/list?search=${encodeURIComponent(searchQuery)}&limit=8`);
-      const data = await res.json();
       
-      setState(s => ({
-        ...s,
-        loading: false,
-        results: (data.products || []).map(p => ({
-          id: p.id,
-          name: p.name,
-          description: p.description?.slice(0, 80) || "",
-          price: p.price,
-          currency: p.currency,
-          image: p.thumbnail_url,
-        })),
-      }));
-    } catch {
+      if (bangType === "products" || !bangType) {
+        const res = await fetch(
+          `${API_URL}/api/products/list?search=${encodeURIComponent(searchQuery)}&limit=8`
+        );
+        const data = await res.json();
+        
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: (data.products || []).map(p => ({
+            type: "product",
+            id: p.id,
+            name: p.name,
+            description: p.description?.slice(0, 80) || "",
+            price: p.price,
+            currency: p.currency,
+            image: p.thumbnail_url,
+          })),
+        }));
+      } else if (bangType === "creators") {
+        const res = await fetch(
+          `${API_URL}/api/profile/search?q=${encodeURIComponent(searchQuery)}&limit=8`
+        );
+        const data = await res.json();
+        
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: (data.profiles || []).map(p => ({
+            type: "creator",
+            id: p.user_id,
+            name: p.display_name || p.username,
+            username: p.username,
+            description: p.bio?.slice(0, 80) || "",
+            image: p.avatar_url,
+          })),
+        }));
+      } else if (bangType === "tags") {
+        const res = await fetch(
+          `${API_URL}/api/products/list?tags=${encodeURIComponent(searchQuery)}&limit=8`
+        );
+        const data = await res.json();
+        
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: (data.products || []).map(p => ({
+            type: "product",
+            id: p.id,
+            name: p.name,
+            description: p.description?.slice(0, 80) || "",
+            price: p.price,
+            currency: p.currency,
+            image: p.thumbnail_url,
+          })),
+        }));
+      }
+    } catch (err) {
+      console.error("Search error:", err);
       setState(s => ({ ...s, loading: false, results: [] }));
     }
   }, []);
 
   useEffect(() => {
+    let bangType = null;
+    let searchQuery = query;
+
+    // Check for bang commands
+    for (const [bang, config] of Object.entries(BANGS)) {
+      if (query.startsWith(bang + " ")) {
+        bangType = config.type;
+        searchQuery = query.slice(bang.length + 1).trim();
+        if (activeBang !== bangType) {
+          setState(s => ({ ...s, activeBang: bangType }));
+        }
+        break;
+      }
+    }
+
+    if (!query.includes("!") && activeBang) {
+      setState(s => ({ ...s, activeBang: null }));
+      bangType = null;
+    }
+
     const timer = setTimeout(() => {
-      fetchResults(query);
+      fetchResults(searchQuery, bangType);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, fetchResults]);
+  }, [query, fetchResults, activeBang]);
 
   const handleKeyDown = (e) => {
     if (e.key === "ArrowDown") {
@@ -80,9 +151,8 @@ export default function SpotlightSearch({ isOpen, onClose }) {
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (results[selectedIndex]) {
-        navigate(`/product/${results[selectedIndex].id}`);
-        onClose();
-      } else if (query.trim()) {
+        handleSelect(results[selectedIndex]);
+      } else if (query.trim() && !query.startsWith("!")) {
         navigate(`/browse?search=${encodeURIComponent(query)}`);
         onClose();
       }
@@ -90,7 +160,11 @@ export default function SpotlightSearch({ isOpen, onClose }) {
   };
 
   const handleSelect = (item) => {
-    navigate(`/product/${item.id}`);
+    if (item.type === "product") {
+      navigate(`/product/${item.id}`);
+    } else if (item.type === "creator") {
+      navigate(`/profile/u/${item.username}`);
+    }
     onClose();
   };
 
@@ -103,81 +177,124 @@ export default function SpotlightSearch({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  const showBangHints = !query || query === "!";
+
   return (
     <div 
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4" 
       onClick={onClose}
     >
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/25 backdrop-blur-md" />
       
       <div 
-        className="relative w-full max-w-2xl bg-white/70 backdrop-blur-3xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/50 overflow-hidden"
+        className="relative w-full max-w-2xl bg-white/80 backdrop-blur-3xl rounded-3xl shadow-[0_20px_70px_rgba(0,0,0,0.25)] border border-white/60 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'rgba(255, 255, 255, 0.72)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.75) 100%)',
+          backdropFilter: 'blur(60px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(60px) saturate(200%)',
         }}
       >
-        <div className="flex items-center gap-3 px-5 py-4">
-          <Search01Icon size={20} className="text-gray-400 flex-shrink-0" strokeWidth={2.5} />
+        <div className="flex items-center gap-4 px-6 py-5 border-b border-gray-200/50">
+          <Search01Icon size={22} className="text-gray-400 flex-shrink-0" strokeWidth={2.5} />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={e => setState(s => ({ ...s, query: e.target.value, selectedIndex: 0 }))}
             onKeyDown={handleKeyDown}
-            placeholder="Spotlight Search"
-            className="flex-1 text-lg bg-transparent outline-none placeholder:text-gray-400 text-gray-900"
+            placeholder="Quick Search"
+            className="flex-1 text-[17px] bg-transparent outline-none placeholder:text-gray-400 text-gray-900 font-medium"
             style={{ caretColor: '#3b82f6' }}
           />
-          <kbd className="hidden sm:flex items-center justify-center min-w-[28px] h-7 px-2 text-xs font-semibold bg-white/60 text-gray-500 rounded-md border border-gray-200/50">
+          <kbd className="hidden sm:flex items-center justify-center min-w-[32px] h-8 px-2.5 text-xs font-semibold bg-white/70 text-gray-600 rounded-lg border border-gray-300/50 shadow-sm">
             ⎋
           </kbd>
         </div>
 
-        {(results.length > 0 || loading) && (
-          <div className="border-t border-gray-200/50" />
+        {showBangHints && (
+          <div className="px-6 py-5 border-b border-gray-200/30">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Quick Commands
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(BANGS).map(([bang, config]) => {
+                const Icon = config.icon;
+                return (
+                  <button
+                    key={bang}
+                    onClick={() => setState(s => ({ ...s, query: bang + " " }))}
+                    className="flex items-center gap-2.5 px-3 py-2.5 bg-white/60 hover:bg-white/90 rounded-xl border border-gray-200/60 transition-all hover:shadow-sm group"
+                  >
+                    <Icon size={18} className="text-gray-600 group-hover:text-blue-600 transition-colors" strokeWidth={2.5} />
+                    <div className="flex-1 text-left">
+                      <div className="text-xs font-bold text-gray-900">{bang}</div>
+                      <div className="text-[10px] text-gray-500">{config.label}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
-        {loading ? (
-          <div className="px-5 py-8 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+        {loading && (
+          <div className="px-6 py-12 flex items-center justify-center">
+            <div className="w-6 h-6 border-3 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
           </div>
-        ) : results.length > 0 ? (
-          <div className="max-h-[50vh] overflow-y-auto py-1" ref={resultsRef}>
+        )}
+
+        {!loading && results.length > 0 && (
+          <div className="max-h-[55vh] overflow-y-auto py-2" ref={resultsRef}>
             {results.map((item, i) => (
               <button
                 key={item.id}
                 onClick={() => handleSelect(item)}
-                className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-all ${
+                className={`w-full px-5 py-3.5 flex items-center gap-4 text-left transition-all ${
                   i === selectedIndex 
-                    ? "bg-blue-500/10" 
-                    : "hover:bg-black/[0.03]"
+                    ? "bg-blue-500/10 border-l-2 border-blue-500" 
+                    : "hover:bg-black/[0.04] border-l-2 border-transparent"
                 }`}
               >
-                <div className="w-12 h-12 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                <div className="w-14 h-14 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                   {item.image ? (
                     <img src={item.image} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="text-xl font-bold text-gray-400">
+                    <div className="text-2xl font-bold text-gray-400">
                       {item.name?.charAt(0)?.toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 truncate">{item.name}</div>
+                  <div className="font-semibold text-gray-900 truncate text-[15px]">
+                    {item.name}
+                  </div>
                   {item.description && (
-                    <div className="text-sm text-gray-500 truncate">{item.description}</div>
+                    <div className="text-sm text-gray-500 truncate mt-0.5">
+                      {item.description}
+                    </div>
+                  )}
+                  {item.type === "creator" && item.username && (
+                    <div className="text-xs text-gray-400 mt-0.5">@{item.username}</div>
                   )}
                 </div>
-                <div className="text-sm font-semibold text-gray-700 flex-shrink-0">
-                  {item.currency === "INR" ? "₹" : "$"}{item.price}
-                </div>
+                {item.type === "product" && item.price && (
+                  <div className="text-sm font-bold text-gray-800 flex-shrink-0 bg-white/70 px-3 py-1.5 rounded-lg">
+                    {item.currency === "INR" ? "₹" : "$"}{item.price}
+                  </div>
+                )}
               </button>
             ))}
           </div>
-        ) : null}
+        )}
+
+        {!loading && !results.length && query && !showBangHints && (
+          <div className="px-6 py-12 text-center">
+            <div className="text-5xl mb-3">🔍</div>
+            <p className="text-base font-medium text-gray-600">No results found</p>
+            <p className="text-sm text-gray-400 mt-1">Try a different search term</p>
+          </div>
+        )}
       </div>
     </div>
   );
