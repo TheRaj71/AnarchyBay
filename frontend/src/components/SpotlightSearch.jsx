@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Search01Icon, 
   ShoppingBasket01Icon,
   UserIcon,
   Tag01Icon,
@@ -19,12 +18,19 @@ const FILTERS = [
   { id: "top", label: "Top", icon: AnalyticsUpIcon, search: "!top " },
 ];
 
+const CATEGORIES = ["Design", "Development", "Marketing", "Business", "3D", "Education", "Photography", "Writing"];
+const PRICE_RANGES = [
+  { label: "Under $10", value: 10 },
+  { label: "Under $50", value: 50 },
+  { label: "Under $100", value: 100 },
+  { label: "Under $500", value: 500 },
+];
+
 const initialState = { query: "", results: [], loading: false, selectedIndex: 0, activeFilter: null };
 
 export default function SpotlightSearch({ isOpen, onClose }) {
   const navigate = useNavigate();
   const inputRef = useRef(null);
-  const resultsRef = useRef(null);
 
   const [state, setState] = useState(initialState);
   const { query, results, loading, selectedIndex, activeFilter } = state;
@@ -105,7 +111,7 @@ export default function SpotlightSearch({ isOpen, onClose }) {
           setState(s => ({
             ...s,
             loading: false,
-            results: (data.profiles || []).slice(0, 5).map(p => ({
+            results: (data.profiles || []).slice(0, 8).map(p => ({
               type: "seller",
               id: p.id,
               name: p.display_name || p.name,
@@ -136,11 +142,11 @@ export default function SpotlightSearch({ isOpen, onClose }) {
           setState(s => ({
             ...s,
             loading: false,
-            results: (data.products || []).slice(0, 6).map(p => ({
+            results: (data.products || []).slice(0, 8).map(p => ({
               type: "product",
               id: p.id,
               name: p.name,
-              description: p.description?.slice(0, 80) || "",
+              description: p.description?.slice(0, 100) || "",
               price: p.price,
               currency: p.currency,
               category: p.category?.[0],
@@ -181,15 +187,118 @@ export default function SpotlightSearch({ isOpen, onClose }) {
   const handleSelect = (item) => {
     if (item.type === "seller") {
       navigate(`/seller/${item.id}`);
+    } else if (item.type === "category") {
+      setState(s => ({ ...s, query: `!c ${item.id}`, activeFilter: "category" }));
+      setTimeout(() => inputRef.current?.focus(), 0);
+    } else if (item.type === "price") {
+      setState(s => ({ ...s, query: `!p ${item.id}`, activeFilter: "price" }));
+      setTimeout(() => inputRef.current?.focus(), 0);
     } else {
       navigate(`/product/${item.id}`);
     }
-    onClose();
+    if (item.type === "seller" || item.type === "product") {
+      onClose();
+    }
   };
 
-  const handleFilterClick = (filter) => {
-    setState(s => ({ ...s, query: filter.search, activeFilter: filter.id }));
+  const handleFilterClick = async (filter) => {
+    setState(s => ({ ...s, query: filter.search, activeFilter: filter.id, loading: true, results: [] }));
     setTimeout(() => inputRef.current?.focus(), 0);
+    
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      
+      if (filter.id === "creators") {
+        const res = await fetch(`${API_URL}/api/profile/search?q=&limit=50`);
+        const data = await res.json();
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: (data.profiles || []).slice(0, 8).map(p => ({
+            type: "seller",
+            id: p.id,
+            name: p.display_name || p.name,
+            description: p.bio || "Creator",
+            image: p.profile_image_url,
+          })),
+        }));
+      } else if (filter.id === "category") {
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: CATEGORIES.map(cat => ({
+            type: "category",
+            id: cat,
+            name: cat,
+            description: `Browse ${cat} products`,
+          })),
+        }));
+      } else if (filter.id === "price") {
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: PRICE_RANGES.map(range => ({
+            type: "price",
+            id: range.value,
+            name: range.label,
+            description: `Browse products ${range.label.toLowerCase()}`,
+          })),
+        }));
+      } else if (filter.id === "products") {
+        const res = await fetch(`${API_URL}/api/products/list?sort=newest&limit=8`);
+        const data = await res.json();
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: (data.products || []).map(p => ({
+            type: "product",
+            id: p.id,
+            name: p.name,
+            description: p.description?.slice(0, 100) || "",
+            price: p.price,
+            currency: p.currency,
+            category: p.category?.[0],
+            image: p.thumbnail_url,
+          })),
+        }));
+      } else if (filter.id === "new") {
+        const res = await fetch(`${API_URL}/api/products/list?sort=newest&limit=8`);
+        const data = await res.json();
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: (data.products || []).map(p => ({
+            type: "product",
+            id: p.id,
+            name: p.name,
+            description: p.description?.slice(0, 100) || "",
+            price: p.price,
+            currency: p.currency,
+            category: p.category?.[0],
+            image: p.thumbnail_url,
+          })),
+        }));
+      } else if (filter.id === "top") {
+        const res = await fetch(`${API_URL}/api/products/list?sort=rating&limit=8`);
+        const data = await res.json();
+        setState(s => ({
+          ...s,
+          loading: false,
+          results: (data.products || []).map(p => ({
+            type: "product",
+            id: p.id,
+            name: p.name,
+            description: p.description?.slice(0, 100) || "",
+            price: p.price,
+            currency: p.currency,
+            category: p.category?.[0],
+            image: p.thumbnail_url,
+          })),
+        }));
+      }
+    } catch {
+      setState(s => ({ ...s, loading: false, results: [] }));
+    }
   };
 
   useEffect(() => {
@@ -208,7 +317,7 @@ export default function SpotlightSearch({ isOpen, onClose }) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-md animate-fade-in" />
       
       <div 
-        className="relative w-full max-w-3xl bg-white/98 backdrop-blur-2xl rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden animate-spotlight-in"
+        className="relative w-full max-w-4xl bg-white/98 backdrop-blur-2xl rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden animate-spotlight-in"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center px-6 py-5 border-b border-gray-100">
@@ -219,7 +328,7 @@ export default function SpotlightSearch({ isOpen, onClose }) {
             onChange={e => setState(s => ({ ...s, query: e.target.value, selectedIndex: 0 }))}
             onKeyDown={handleKeyDown}
             placeholder="Spotlight Search"
-            className="flex-1 text-xl font-medium bg-transparent outline-none placeholder:text-gray-400 text-gray-900"
+            className="flex-1 text-2xl font-medium bg-transparent outline-none placeholder:text-gray-400 text-gray-900"
           />
           <kbd className="hidden sm:flex items-center justify-center w-8 h-8 text-xs font-bold bg-gray-100 text-gray-500 rounded-lg shadow-sm">
             ⎋
@@ -247,15 +356,15 @@ export default function SpotlightSearch({ isOpen, onClose }) {
           })}
         </div>
 
-        {!query && (
+        {!query && !activeFilter && (
           <div className="px-6 py-8 text-center">
             <div className="text-6xl mb-4 animate-bounce-subtle">🔍</div>
             <p className="text-base text-gray-500">Start typing to search products and creators</p>
           </div>
         )}
 
-        {query && (
-          <div className="max-h-[50vh] overflow-y-auto" ref={resultsRef}>
+        {(query || activeFilter) && (
+          <div className="max-h-[60vh] overflow-y-auto" ref={resultsRef}>
             {loading ? (
               <div className="px-6 py-16 flex flex-col items-center justify-center">
                 <div className="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-3" />
@@ -267,30 +376,34 @@ export default function SpotlightSearch({ isOpen, onClose }) {
                   <button
                     key={item.id}
                     onClick={() => handleSelect(item)}
-                    className={`w-full px-6 py-4 flex items-center gap-4 text-left transition-all ${
+                    className={`w-full px-6 py-5 flex items-center gap-5 text-left transition-all ${
                       i === selectedIndex 
                         ? "bg-blue-50 border-l-4 border-blue-500" 
                         : "hover:bg-gray-50"
                     }`}
                   >
-                    <div className="w-14 h-14 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                    <div className="w-20 h-20 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                       {item.image ? (
                         <img src={item.image} alt="" className="w-full h-full object-cover" />
                       ) : item.type === "seller" ? (
-                        <span className="text-2xl font-black text-gray-600">
+                        <span className="text-3xl font-black text-gray-600">
                           {item.name?.charAt(0)?.toUpperCase()}
                         </span>
+                      ) : item.type === "category" ? (
+                        <Tag01Icon size={32} className="text-gray-400" strokeWidth={2} />
+                      ) : item.type === "price" ? (
+                        <DollarCircleIcon size={32} className="text-gray-400" strokeWidth={2} />
                       ) : (
-                        <ShoppingBasket01Icon size={24} className="text-gray-400" strokeWidth={2} />
+                        <ShoppingBasket01Icon size={32} className="text-gray-400" strokeWidth={2} />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900 truncate text-lg">{item.name}</div>
-                      <div className="text-sm text-gray-500 truncate">{item.description}</div>
+                      <div className="font-semibold text-gray-900 truncate text-xl">{item.name}</div>
+                      <div className="text-base text-gray-500 truncate">{item.description}</div>
                     </div>
                     {item.type === "product" && (
                       <div className="flex flex-col items-end gap-1">
-                        <span className="text-lg font-bold text-gray-900">
+                        <span className="text-xl font-bold text-gray-900">
                           {item.currency === "INR" ? "₹" : "$"}{item.price}
                         </span>
                         {item.category && (
