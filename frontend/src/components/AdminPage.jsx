@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/auth/use-auth";
 import NavBar from "./NavBar";
 import { toast } from "sonner";
@@ -265,30 +265,15 @@ export default function AdminPage() {
                           <th className="px-6 py-4 text-left font-black uppercase">Actions</th>
                         </tr>
                       </thead>
-
                       <tbody>
                         {users.map((user) => (
-                          <tr
-                            key={user.id}
-                            className="border-b-2 border-gray-200 hover:bg-white"
-                          >
-                            {/* Name */}
-                            <td className="px-6 py-4 font-bold">
-                              {user.name || "Anonymous"}
-                            </td>
-
-                            {/* Email */}
-                            <td className="px-6 py-4 text-gray-600">
-                              {user.email}
-                            </td>
-
-                            {/* Role */}
+                          <tr key={user.id} className="border-b-2 border-gray-200 hover:bg-white">
+                            <td className="px-6 py-4 font-bold">{user.name || 'Anonymous'}</td>
+                            <td className="px-6 py-4 text-gray-600">{user.email}</td>
                             <td className="px-6 py-4">
                               <select
                                 value={user.role}
-                                onChange={(e) =>
-                                  updateUserRole(user.id, e.target.value)
-                                }
+                                onChange={(e) => updateUserRole(user.id, e.target.value)}
                                 className="px-3 py-2 font-bold border-2 border-black bg-white cursor-pointer"
                               >
                                 <option value="customer">Customer</option>
@@ -297,21 +282,20 @@ export default function AdminPage() {
                                 <option value="admin">Admin</option>
                               </select>
                             </td>
-
-                            {/* Joined */}
                             <td className="px-6 py-4 text-gray-600">
                               {new Date(user.created_at).toLocaleDateString()}
                             </td>
-
-                            {/* Actions */}
                             <td className="px-6 py-4">
-                              <Link
-                                to={`/seller/${user.id}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-sm font-bold opacity-80 hover:opacity-100 hover:underline"
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/seller/${user.id}`);
+                                }}
+                                className="px-4 py-2 text-sm font-bold uppercase bg-[var(--mint)] border-2 border-black
+             hover:shadow-[2px_2px_0px_var(--black)] transition-all"
                               >
                                 View
-                              </Link>
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -320,7 +304,6 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
-
 
               {activeTab === "products" && (
                 <div className="bg-white border-3 border-black shadow-[6px_6px_0px_var(--black)] overflow-hidden">
@@ -457,7 +440,7 @@ export default function AdminPage() {
                                        ${msg.replied_at
                                     ? "bg-gray-300 cursor-not-allowed opacity-60"
                                     : "bg-[var(--mint)] hover:shadow-[2px_2px_0px_var(--black)]"}
-                                  `}
+                                      `}
                               >
                                 {msg.replied_at ? "Replied" : "Reply"}
                               </button>
