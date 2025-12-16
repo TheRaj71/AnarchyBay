@@ -137,7 +137,7 @@ router.delete("/products/:id", requireAuth, requireRole('admin'), async (req, re
 
 // ================= CONTACT MESSAGES =================
 router.get(
-  "/contact-messages",
+  "/contact",
   requireAuth,
   requireRole("admin"),
   async (req, res) => {
@@ -162,7 +162,7 @@ router.get(
 
 // Reply to contact message
 router.post(
-  "/contact-messages/:id/reply",
+  "/contact/:id/reply",
   requireAuth,
   requireRole("admin"),
   async (req, res) => {
