@@ -467,7 +467,7 @@ function Footer() {
           {[
             { title: "Product", links: [["Features", "#"], ["Pricing", "#"], ["API", "#"]] },
             { title: "Company", links: [["About", "/about"], ["Blog", "#"], ["Careers", "#"]] },
-            { title: "Support", links: [["Help Center", "#"], ["Contact", "#"], ["Terms", "#"]] },
+            { title: "Support", links: [["Help Center", "/help"], ["Contact", "#"], ["Terms", "#"]] },
           ].map((col, i) => (
             <div key={i}>
               <h4 className="font-black text-sm uppercase mb-4">{col.title}</h4>

@@ -16,6 +16,7 @@ import CartPage from './components/CartPage.jsx';
 import ProfileSettings from './components/ProfileSettings.jsx';
 import AboutPage from './components/AboutPage.jsx';
 import CareersPage from './components/CareersPage.jsx';
+import HelpCenterPage from './components/HelpCenterPage.jsx';
 import { Toaster } from 'sonner';
 
 import "swiper/css";
@@ -55,6 +56,8 @@ function App() {
         <Route path='/seller/:sellerId' element={<SellerPage />} />
         <Route path='/download/:purchaseId' element={<DownloadPage />} />
         <Route path='/checkout/success' element={<CheckoutSuccessPage />} />
+        <Route path="/help" element={<HelpCenterPage />} />
+
       </Routes>
     </BrowserRouter>
   )
