@@ -159,7 +159,7 @@ app.use('/api/reviews', rateLimiters.api, reviewRoutes);
 app.use('/api/wishlist', rateLimiters.api, wishlistRoutes);
 app.use('/api/cart', rateLimiters.api, cartRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/api/admin", adminRoutes);
+
 
 // 404 handler - must be after all routes
 app.use(notFoundHandler);
