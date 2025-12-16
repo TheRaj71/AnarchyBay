@@ -172,14 +172,13 @@ router.post(
     const { id } = req.params;
     const { replyMessage } = req.body;
 
-    if (!replyMessage) {
-      return res.status(400).json({
-        message: "Reply message required",
-      });
+    // 1️⃣ Validate
+    if (!replyMessage?.trim()) {
+      return res.status(400).json({ message: "Reply message required" });
     }
 
     try {
-      // Fetch contact message
+      // 2️⃣ Fetch message from DB
       const { data: msg, error } = await supabase
         .from("contact_messages")
         .select("*")
@@ -187,12 +186,10 @@ router.post(
         .single();
 
       if (error || !msg) {
-        return res.status(404).json({
-          message: "Message not found",
-        });
+        return res.status(404).json({ message: "Message not found" });
       }
 
-      // Send email
+      // 3️⃣ Send email
       await transporter.sendMail({
         from: `"AnarchyBay Support" <${process.env.SMTP_USER}>`,
         to: msg.email,
@@ -200,8 +197,8 @@ router.post(
         text: replyMessage,
       });
 
-      // Update DB
-      const { error: updateError } = await supabase
+      // 4️⃣ ✅ UPDATE DB (THIS IS THE LINE YOU ASKED ABOUT)
+      await supabase
         .from("contact_messages")
         .update({
           replied_at: new Date().toISOString(),
@@ -209,8 +206,7 @@ router.post(
         })
         .eq("id", id);
 
-      if (updateError) throw updateError;
-
+      // 5️⃣ Respond success
       return res.json({
         success: true,
         message: "Reply sent successfully",
@@ -223,6 +219,7 @@ router.post(
     }
   }
 );
+
 
 export default router;
 
