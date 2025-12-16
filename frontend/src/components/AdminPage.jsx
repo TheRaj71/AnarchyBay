@@ -133,36 +133,37 @@ export default function AdminPage() {
   };
 
   const sendReply = async (id) => {
-    if (!replyText.trim()) {
-      toast.error("Reply cannot be empty");
-      return;
-    }
+  if (!replyText.trim()) {
+    toast.error("Reply cannot be empty");
+    return;
+  }
 
-    const token = getAccessToken();
+  const token = getAccessToken();
 
-    try {
-      const res = await fetch(
-        `${API_URL}/api/admin/contact-messages/${id}/reply`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ replyMessage: replyText }),
-        }
-      );
+  try {
+    const res = await fetch(
+      `${API_URL}/api/admin/contact-messages/${id}/reply`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ replyMessage: replyText }),
+      }
+    );
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
 
-      toast.success("Reply sent ✉️");
-      setReplyModal(null);
-      fetchData();
-    } catch (err) {
-      toast.error(err.message || "Failed to send reply");
-    }
-  };
+    toast.success("Reply sent ✉️");
+    setReplyModal(null);
+    fetchData();
+  } catch (err) {
+    toast.error(err.message || "Failed to send reply");
+  }
+};
+
 
   if (loading || role !== 'admin') {
     return (
@@ -437,18 +438,17 @@ export default function AdminPage() {
                             {/* Action */}
                             <td className="px-6 py-4">
                               <button
-                                disabled={!!msg.replied_at}
                                 onClick={() => {
                                   setReplyModal(msg);
-                                  setReplyText("");
+                                  setReplyText(msg.reply_message || "");
                                 }}
                                 className={`px-4 py-2 font-bold text-sm border-2 border-black transition-all
     ${msg.replied_at
-                                    ? "bg-gray-300 cursor-not-allowed"
+                                    ? "bg-green-200 hover:shadow-[2px_2px_0px_var(--black)]"
                                     : "bg-[var(--mint)] hover:shadow-[2px_2px_0px_var(--black)]"}
   `}
                               >
-                                {msg.replied_at ? "Replied" : "Reply"}
+                                {msg.replied_at ? "View Reply" : "Reply"}
                               </button>
                             </td>
                           </tr>
@@ -464,8 +464,11 @@ export default function AdminPage() {
       </main>
       {/* ================= REPLY MODAL ================= */}
       {replyModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="bg-white border-3 border-black shadow-[6px_6px_0px_var(--black)] w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center pointer-events-auto">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white pointer-events-auto border-3 border-black shadow-[6px_6px_0px_var(--black)] w-full max-w-md p-6"
+          >
             <h3 className="font-black text-xl mb-2">
               Reply to {replyModal.email}
             </h3>
@@ -491,38 +494,8 @@ export default function AdminPage() {
               </button>
 
               <button
-                onClick={async () => {
-                  if (!replyText.trim()) {
-                    toast.error("Reply cannot be empty");
-                    return;
-                  }
-
-                  const token = getAccessToken();
-
-                  try {
-                    const res = await fetch(
-                      `${API_URL}/api/admin/contact-messages/${replyModal.id}/reply`,
-                      {
-                        method: "POST",
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ replyMessage: replyText }),
-                      }
-                    );
-
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.message);
-
-                    toast.success("Reply sent successfully ✉️");
-                    setReplyModal(null);
-                    fetchData();
-                  } catch (err) {
-                    toast.error(err.message || "Failed to send reply");
-                  }
-                }}
-                className="px-4 py-2 font-bold bg-[var(--pink-500)] text-white border-2 border-black"
+                onClick={() => sendReply(replyModal.id)}
+                className="px-4 py-2 font-bold bg-[var(--pink-500)] text-white border-2 border-black hover:shadow-[2px_2px_0px_var(--black)]"
               >
                 Send Reply
               </button>
@@ -530,6 +503,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
 
     </div>
   );
