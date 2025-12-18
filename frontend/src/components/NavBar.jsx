@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/auth/use-auth";
 import SpotlightSearch from "./SpotlightSearch";
 
+import cartIcon from "./images/cartnew.png";
+
 export default function NavBar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -89,8 +91,8 @@ export default function NavBar() {
                     key={link.path}
                     onClick={() => navigate(link.path)}
                     className={`px-5 py-2.5 text-base font-bold uppercase tracking-wide border-3 border-black transition-all ${isActive(link.path)
-                        ? "bg-[var(--yellow-400)] shadow-[3px_3px_0px_var(--black)]"
-                        : "bg-white hover:bg-[var(--yellow-400)] hover:shadow-[3px_3px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                      ? "bg-[var(--yellow-400)] shadow-[3px_3px_0px_var(--black)]"
+                      : "bg-white hover:bg-[var(--yellow-400)] hover:shadow-[3px_3px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px]"
                       }`}
                   >
                     {link.label}
@@ -111,12 +113,13 @@ export default function NavBar() {
                 <span className="hidden sm:inline text-sm font-bold">⌘K</span>
               </button>
               <button
-                onClick={() => { navigate("/cart"); setAvatarDropdownOpen(false); }}
+                onClick={() => {
+                  navigate("/cart");
+                  setAvatarDropdownOpen(false);
+                }}
                 className="w-full px-4 py-3 text-left font-bold uppercase text-sm hover:bg-[var(--yellow-400)] border-b-3 border-black flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                </svg>
+                <img src={cartIcon} alt="Cart" className="w-5 h-5" />
                 Cart
               </button>
 
