@@ -7,6 +7,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { CreditCard, Zap, Key, BarChart3, Palette, Rocket } from 'lucide-react';
 import { MacbookScroll } from "./ui/macbook-scroll";
 import HeroScrollDemo from "./container-scroll-animation-demo";
+import { LaserFlow } from "./ui/LaserFlow";
 
 export default function LandingPage() {
   const navigate = useNavigate();
