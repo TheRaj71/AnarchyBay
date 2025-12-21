@@ -12,7 +12,7 @@ import {
   ShoppingBag, DollarSign, Package, Users, ArrowUpRight, 
   BarChart2, Activity, Plus, Library, Settings, LogOut,
   Wallet, TrendingUp, History, Zap, CreditCard, ChevronRight,
-  LayoutDashboard, UserCircle, Download, ExternalLink, RefreshCw
+    LayoutDashboard, UserCircle, Download, ExternalLink, RefreshCw, Tag
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,7 +26,27 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeView, setActiveView] = useState("creator");
+    const [activeView, setActiveView] = useState("creator");
+    const [adminAnalytics, setAdminAnalytics] = useState(null);
+
+    const fetchAdminAnalytics = async () => {
+        try {
+            const token = getAccessToken();
+            const res = await fetch(`${API_URL}/api/analytics/admin`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) setAdminAnalytics(data.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
+        if (user?.role === 'admin' && activeView === 'admin' && !adminAnalytics) {
+            fetchAdminAnalytics();
+        }
+    }, [user, activeView]);
 
   useEffect(() => {
     const checkOAuthSession = async () => {
@@ -144,13 +164,20 @@ export default function Dashboard() {
                 label="My Library" 
                 onClick={() => navigate("/library")} 
               />
-              {user?.role === 'creator' || user?.role === 'seller' || user?.role === 'admin' ? (
-                <SidebarItem 
-                  icon={<Package size={18} />} 
-                  label="My Products" 
-                  onClick={() => navigate("/seller/" + user?.id)} 
-                />
-              ) : null}
+                {user?.role === 'creator' || user?.role === 'seller' || user?.role === 'admin' ? (
+                  <>
+                  <SidebarItem 
+                    icon={<Package size={18} />} 
+                    label="My Products" 
+                    onClick={() => navigate("/seller/" + user?.id)} 
+                  />
+                  <SidebarItem 
+                    icon={<Tag size={18} />} 
+                    label="Discount Codes" 
+                    onClick={() => navigate("/discounts")} 
+                  />
+                  </>
+                ) : null}
               <SidebarItem 
                 icon={<Settings size={18} />} 
                 label="Settings" 
@@ -211,20 +238,28 @@ export default function Dashboard() {
                 <p className="text-gray-500 text-sm font-medium">Welcome back, {user?.name.split(' ')[0]}. Monitoring your performance.</p>
               </div>
 
-              <div className="flex bg-gray-200/50 p-1.5 rounded-2xl">
-                <button 
-                    onClick={() => setActiveView("creator")}
-                    className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeView === 'creator' ? 'bg-white shadow-md text-[#1d1d1f]' : 'text-gray-500 hover:text-[#1d1d1f]'}`}
-                >
-                    Seller
-                </button>
-                <button 
-                    onClick={() => setActiveView("buyer")}
-                    className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeView === 'buyer' ? 'bg-white shadow-md text-[#1d1d1f]' : 'text-gray-500 hover:text-[#1d1d1f]'}`}
-                >
-                    Buyer
-                </button>
-              </div>
+                <div className="flex bg-gray-200/50 p-1.5 rounded-2xl">
+                  <button 
+                      onClick={() => setActiveView("creator")}
+                      className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeView === 'creator' ? 'bg-white shadow-md text-[#1d1d1f]' : 'text-gray-500 hover:text-[#1d1d1f]'}`}
+                  >
+                      Seller
+                  </button>
+                  <button 
+                      onClick={() => setActiveView("buyer")}
+                      className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeView === 'buyer' ? 'bg-white shadow-md text-[#1d1d1f]' : 'text-gray-500 hover:text-[#1d1d1f]'}`}
+                  >
+                      Buyer
+                  </button>
+                  {user?.role === 'admin' && (
+                    <button 
+                        onClick={() => setActiveView("admin")}
+                        className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeView === 'admin' ? 'bg-white shadow-md text-[#1d1d1f]' : 'text-gray-500 hover:text-[#1d1d1f]'}`}
+                    >
+                        Admin
+                    </button>
+                  )}
+                </div>
             </header>
 
             {activeView === 'creator' ? (
@@ -541,14 +576,98 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </main>
+                </div>
+              )}
+
+              {activeView === 'admin' && user?.role === 'admin' && (
+                <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <AppleStatCard 
+                            label="Global Volume" 
+                            value={`₹${adminAnalytics?.overview?.totalRevenue?.toLocaleString() || 0}`} 
+                            icon={<Activity size={20} className="text-blue-500" />}
+                        />
+                        <AppleStatCard 
+                            label="Total Users" 
+                            value={adminAnalytics?.overview?.userCount || 0} 
+                            icon={<Users size={20} className="text-purple-500" />}
+                        />
+                        <AppleStatCard 
+                            label="Total Assets" 
+                            value={adminAnalytics?.overview?.productCount || 0} 
+                            icon={<Package size={20} className="text-pink-500" />}
+                        />
+                        <AppleStatCard 
+                            label="Platform Fees" 
+                            value={`₹${adminAnalytics?.overview?.totalPlatformFees?.toLocaleString() || 0}`} 
+                            icon={<DollarSign size={20} className="text-green-500" />}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+                            <h3 className="text-xl font-bold mb-6">Global Revenue Flow</h3>
+                            <div className="h-[300px]">
+                                {adminAnalytics?.revenueChart?.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={adminAnalytics.revenueChart}>
+                                            <defs>
+                                                <linearGradient id="adminRev" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#0071E3" stopOpacity={0.15}/>
+                                                    <stop offset="95%" stopColor="#0071E3" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10}} tickFormatter={(val) => new Date(val).toLocaleDateString()} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                                            <Tooltip />
+                                            <Area type="monotone" dataKey="revenue" stroke="#0071E3" strokeWidth={3} fill="url(#adminRev)" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                ) : <EmptyState message="No global transaction data" />}
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+                            <h3 className="text-xl font-bold mb-6">Recent Platform Transactions</h3>
+                            <div className="space-y-4">
+                                {adminAnalytics?.purchases?.slice(0, 6).map(p => (
+                                    <div key={p.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs uppercase">
+                                                {p.customer?.name?.[0] || 'U'}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold truncate max-w-[150px]">{p.products?.name}</p>
+                                                <p className="text-[10px] text-gray-500">{new Date(p.purchased_at).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-bold">₹{p.amount}</p>
+                                            <p className="text-[10px] text-green-600 font-bold">Fee: ₹{p.platform_fee}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
+  function EmptyState({ message }) {
+    return (
+        <div className="h-full w-full flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 rounded-[2rem] border border-dashed border-gray-200">
+            <Activity size={32} className="text-gray-200 mb-3" />
+            <p className="text-sm font-bold text-gray-400">{message}</p>
+        </div>
+    );
+  }
 
 function SidebarItem({ icon, label, active, onClick }) {
   return (

@@ -4,10 +4,13 @@ import { useAuth } from "@/hooks/auth/use-auth";
 import NavBar from "./NavBar";
 import { toast } from "sonner";
 import { getAccessToken } from "@/lib/api/client";
+import { 
+  ArrowLeft, Palette, FileText, ShoppingBag, 
+  Tag, Save, X, Check, Zap, Globe
+} from "lucide-react";
 
 const CATEGORIES = ["Design", "Code", "Templates", "E-commerce", "Icons", "Photography", "Productivity", "Education"];
 const SHORT_DESC_LIMIT = 200;
-const LONG_DESC_LIMIT = 5000;
 
 const PAGE_COLORS = [
   { name: "White", value: "#ffffff" },
@@ -16,10 +19,8 @@ const PAGE_COLORS = [
   { name: "Mint", value: "#ecfdf5" },
   { name: "Sky", value: "#f0f9ff" },
   { name: "Lavender", value: "#faf5ff" },
-  { name: "Peach", value: "#fff7ed" },
   { name: "Gray", value: "#f9fafb" },
   { name: "Black", value: "#0a0a0a" },
-  { name: "Dark Blue", value: "#1e3a5f" },
 ];
 
 const ACCENT_COLORS = [
@@ -28,9 +29,6 @@ const ACCENT_COLORS = [
   { name: "Mint", value: "#10b981" },
   { name: "Blue", value: "#3b82f6" },
   { name: "Purple", value: "#8b5cf6" },
-  { name: "Orange", value: "#f97316" },
-  { name: "Red", value: "#ef4444" },
-  { name: "Teal", value: "#14b8a6" },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -68,7 +66,7 @@ export default function EditProductPage() {
         if (data.product) {
           const p = data.product;
           if (p.creator_id !== user?.id) {
-            toast.error("You can only edit your own products");
+            toast.error("Unauthorized access");
             navigate(`/product/${productId}`);
             return;
           }
@@ -89,7 +87,7 @@ export default function EditProductPage() {
         setLoading(false);
       })
       .catch(() => {
-        toast.error("Failed to load product");
+        toast.error("Failed to sync product data");
         setLoading(false);
       });
   }, [productId, isAuthenticated, navigate, user?.id]);
@@ -107,7 +105,7 @@ export default function EditProductPage() {
     e.preventDefault();
     
     if (!form.name || !form.price || form.categories.length === 0) {
-      toast.error("Please fill in all required fields");
+      toast.error("Required fields missing");
       return;
     }
 
@@ -138,15 +136,14 @@ export default function EditProductPage() {
       });
 
       if (response.ok) {
-        toast.success("Product updated successfully!");
+        toast.success("Registry updated successfully");
         navigate(`/product/${productId}`);
       } else {
         const data = await response.json();
-        toast.error(data.error?.message || data.error || "Failed to update product");
+        toast.error(data.error?.message || "Failed to update asset");
       }
     } catch (err) {
-      console.error("Update error:", err);
-      toast.error("An error occurred. Please try again.");
+      toast.error("Network synchronization failed");
     } finally {
       setSaving(false);
     }
@@ -156,332 +153,222 @@ export default function EditProductPage() {
     return (
       <div className="min-h-screen bg-white">
         <NavBar />
-        <main className="pt-24 flex items-center justify-center">
-          <svg className="w-12 h-12 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
+        <main className="pt-32 flex flex-col items-center justify-center">
+            <div className="w-12 h-12 border-4 border-[#0071e3] border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Accessing Registry...</p>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white text-[#1d1d1f] font-sans">
       <NavBar />
 
-      <main className="pt-24 pb-20">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="mb-8">
-            <button 
-              onClick={() => navigate(`/product/${productId}`)}
-              className="flex items-center gap-2 mb-4 px-4 py-2 text-sm font-bold uppercase border-3 border-black bg-white hover:bg-[var(--yellow-400)] shadow-[3px_3px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_var(--black)] transition-all"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-              Back to product
-            </button>
-            <h1 className="font-display text-4xl mb-2">Edit Product</h1>
-            <p className="text-gray-500">Update your product details</p>
+      <main className="pt-32 pb-40 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <header className="mb-16">
+          <button 
+            onClick={() => navigate(`/product/${productId}`)}
+            className="mb-8 flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#0071e3] transition-colors group"
+          >
+            <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
+            Back to Asset
+          </button>
+          <h1 className="text-5xl font-black tracking-tight mb-2">Edit Asset</h1>
+          <p className="text-xl text-gray-500 font-medium">Update specification for mapping: <span className="text-[#0071e3] underline underline-offset-4 font-bold">{form.name}</span></p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="grid lg:grid-cols-12 gap-16">
+          <div className="lg:col-span-8 space-y-12">
+            
+            {/* Identity Node */}
+            <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 md:p-12 shadow-sm">
+                <div className="flex items-center gap-4 mb-10">
+                    <div className="w-12 h-12 bg-blue-50 text-[#0071e3] rounded-2xl flex items-center justify-center">
+                        <FileText size={24} />
+                    </div>
+                    <h2 className="text-2xl font-bold tracking-tight">Technical Data</h2>
+                </div>
+
+                <div className="space-y-8">
+                    <InputField 
+                        label="Asset Name" 
+                        value={form.name} 
+                        onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                        placeholder="Specification name..."
+                        required
+                    />
+
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="text-xs font-black uppercase tracking-widest text-[#1d1d1f]">Short Tagline</label>
+                            <span className="text-[10px] font-bold text-gray-400">{form.short_description.length}/{SHORT_DESC_LIMIT}</span>
+                        </div>
+                        <input
+                            type="text"
+                            value={form.short_description}
+                            onChange={e => setForm(p => ({ ...p, short_description: e.target.value.slice(0, SHORT_DESC_LIMIT) }))}
+                            className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-50 transition-all"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-[#1d1d1f] mb-4">Detailed Description</label>
+                        <textarea
+                            value={form.long_description}
+                            onChange={e => setForm(p => ({ ...p, long_description: e.target.value }))}
+                            rows={10}
+                            className="w-full px-8 py-6 bg-gray-50 border border-gray-100 rounded-[2rem] font-medium outline-none focus:ring-4 focus:ring-blue-50 transition-all resize-none"
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* Price and Taxonomy */}
+            <div className="grid md:grid-cols-2 gap-8">
+                <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-10 h-10 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
+                            <ShoppingBag size={20} />
+                        </div>
+                        <h3 className="text-xl font-bold">Economic Node</h3>
+                    </div>
+                    <div className="space-y-6">
+                        <div>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Unit</label>
+                            <select
+                                value={form.currency}
+                                onChange={e => setForm(p => ({ ...p, currency: e.target.value }))}
+                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl font-bold outline-none"
+                            >
+                                <option value="INR">INR (₹)</option>
+                                <option value="USD">USD ($)</option>
+                            </select>
+                        </div>
+                        <InputField 
+                            type="number"
+                            label="Price" 
+                            value={form.price} 
+                            onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
+                            required
+                        />
+                    </div>
+                </section>
+
+                <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                            <Tag size={20} />
+                        </div>
+                        <h3 className="text-xl font-bold">Taxonomy</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {CATEGORIES.map(cat => (
+                            <button
+                                key={cat}
+                                type="button"
+                                onClick={() => toggleCategory(cat)}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                    form.categories.includes(cat)
+                                        ? "bg-[#1d1d1f] text-white"
+                                        : "bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-100"
+                                }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-white border-3 border-black shadow-[6px_6px_0px_var(--black)] p-6">
-              <h2 className="font-bold text-xl uppercase mb-4">Product Details</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold uppercase text-gray-700 mb-1">Product Name *</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                    className="w-full px-4 py-3 border-3 border-black focus:outline-none focus:shadow-[3px_3px_0px_var(--black)]"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-sm font-bold uppercase text-gray-700">Short Description</label>
-                    <span className={`text-xs font-bold ${form.short_description.length > SHORT_DESC_LIMIT * 0.9 ? "text-pink-500" : "text-gray-400"}`}>
-                      {form.short_description.length}/{SHORT_DESC_LIMIT}
-                    </span>
-                  </div>
-                  <textarea
-                    value={form.short_description}
-                    onChange={e => setForm(p => ({ ...p, short_description: e.target.value.slice(0, SHORT_DESC_LIMIT) }))}
-                    rows={2}
-                    className="w-full px-4 py-3 border-3 border-black focus:outline-none focus:shadow-[3px_3px_0px_var(--black)] resize-none"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-sm font-bold uppercase text-gray-700">Long Description</label>
-                    <span className={`text-xs font-bold ${form.long_description.length > LONG_DESC_LIMIT * 0.9 ? "text-pink-500" : "text-gray-400"}`}>
-                      {form.long_description.length}/{LONG_DESC_LIMIT}
-                    </span>
-                  </div>
-                  <textarea
-                    value={form.long_description}
-                    onChange={e => setForm(p => ({ ...p, long_description: e.target.value.slice(0, LONG_DESC_LIMIT) }))}
-                    rows={8}
-                    className="w-full px-4 py-3 border-3 border-black focus:outline-none focus:shadow-[3px_3px_0px_var(--black)] resize-none text-sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold uppercase text-gray-700 mb-1">Price *</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-600">
-                        {form.currency === "INR" ? "₹" : "$"}
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={form.price}
-                        onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
-                        className="w-full pl-10 pr-4 py-3 font-bold text-lg border-3 border-black focus:outline-none focus:shadow-[3px_3px_0px_var(--black)]"
-                        required
-                      />
+          {/* Right Sidebar */}
+          <div className="lg:col-span-4 space-y-12">
+            <div className="sticky top-32 space-y-8">
+                
+                {/* Visual Customization */}
+                <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+                    <div className="flex items-center gap-3 mb-8">
+                        <Palette size={20} className="text-pink-500" />
+                        <h3 className="text-lg font-black tracking-tight">Theme Registry</h3>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold uppercase text-gray-700 mb-1">Currency</label>
-                    <select
-                      value={form.currency}
-                      onChange={e => setForm(p => ({ ...p, currency: e.target.value }))}
-                      className="w-full px-4 py-3 border-3 border-black focus:outline-none cursor-pointer font-bold"
+                    
+                    <div className="space-y-6">
+                        <div>
+                            <label className="block text-[10px] font-black uppercase text-gray-400 mb-4">Base Color</label>
+                            <div className="flex flex-wrap gap-2">
+                                {PAGE_COLORS.map(color => (
+                                    <button
+                                        key={color.value}
+                                        type="button"
+                                        onClick={() => setForm(p => ({ ...p, page_color: color.value }))}
+                                        className={`w-8 h-8 rounded-full border border-gray-100 transition-all ${form.page_color === color.value ? "ring-2 ring-blue-500 ring-offset-2 scale-110" : "hover:scale-110"}`}
+                                        style={{ backgroundColor: color.value }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] font-black uppercase text-gray-400 mb-4">Button Theme</label>
+                            <div className="flex flex-wrap gap-2">
+                                {ACCENT_COLORS.map(color => (
+                                    <button
+                                        key={color.value}
+                                        type="button"
+                                        onClick={() => setForm(p => ({ ...p, button_color: color.value }))}
+                                        className={`w-8 h-8 rounded-full border border-gray-100 transition-all ${form.button_color === color.value ? "ring-2 ring-black ring-offset-2 scale-110" : "hover:scale-110"}`}
+                                        style={{ backgroundColor: color.value }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Final Actions */}
+                <div className="space-y-4">
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className="w-full py-5 bg-[#0071e3] text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:translate-y-[-2px] transition-all shadow-xl shadow-blue-100 disabled:opacity-50"
                     >
-                      <option value="INR">INR (₹)</option>
-                      <option value="USD">USD ($)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold uppercase text-gray-700 mb-2">Categories *</label>
-                  <div className="flex flex-wrap gap-2">
-                    {CATEGORIES.map(cat => (
-                      <button
-                        key={cat}
+                        {saving ? <Zap className="animate-spin" size={20} /> : <Save size={20} />}
+                        Save Specification
+                    </button>
+                    <button
                         type="button"
-                        onClick={() => toggleCategory(cat)}
-                        className={`px-4 py-2 text-sm font-bold uppercase border-3 border-black transition-all ${
-                          form.categories.includes(cat)
-                            ? "bg-[var(--yellow-400)] shadow-[3px_3px_0px_var(--black)]"
-                            : "bg-white hover:bg-[var(--mint)]"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
+                        onClick={() => navigate(`/product/${productId}`)}
+                        className="w-full py-4 bg-gray-50 border border-gray-100 text-gray-500 rounded-2xl font-bold hover:bg-gray-100 transition-all"
+                    >
+                        Abort Changes
+                    </button>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold uppercase text-gray-700 mb-1">Tags (comma separated)</label>
-                  <input
-                    type="text"
-                    value={form.tags}
-                    onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
-                    className="w-full px-4 py-3 border-3 border-black focus:outline-none focus:shadow-[3px_3px_0px_var(--black)]"
-                  />
+                <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 flex items-start gap-3">
+                    <Globe size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-[10px] font-bold text-blue-700 uppercase tracking-widest leading-relaxed">Changes will propagate across all registry nodes instantly upon save.</p>
                 </div>
-              </div>
             </div>
-
-            <div className="bg-white border-3 border-black shadow-[6px_6px_0px_var(--black)] p-6">
-              <h2 className="font-bold text-xl uppercase mb-4">Page Customization</h2>
-              <p className="text-sm text-gray-500 mb-6">Customize the colors of your product page elements</p>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold uppercase text-gray-700 mb-3">Page Background Color</label>
-                  <div className="flex flex-wrap gap-3">
-                    {PAGE_COLORS.map(color => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        onClick={() => setForm(p => ({ ...p, page_color: color.value }))}
-                        className={`w-10 h-10 border-3 transition-all ${
-                          form.page_color === color.value 
-                            ? "border-[var(--pink-500)] shadow-[3px_3px_0px_var(--black)] scale-110" 
-                            : "border-black hover:scale-105"
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
-                    ))}
-                    <div className="relative">
-                      <input
-                        type="color"
-                        value={form.page_color}
-                        onChange={e => setForm(p => ({ ...p, page_color: e.target.value }))}
-                        className="absolute inset-0 w-10 h-10 opacity-0 cursor-pointer"
-                      />
-                      <div 
-                        className="w-10 h-10 border-3 border-dashed border-gray-400 flex items-center justify-center hover:border-black transition-colors"
-                        style={{ backgroundColor: !PAGE_COLORS.find(c => c.value === form.page_color) ? form.page_color : 'transparent' }}
-                      >
-                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold uppercase text-gray-700 mb-3">Accent Color (Price Section)</label>
-                  <div className="flex flex-wrap gap-3">
-                    {ACCENT_COLORS.map(color => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        onClick={() => setForm(p => ({ ...p, accent_color: color.value }))}
-                        className={`w-10 h-10 border-3 transition-all ${
-                          form.accent_color === color.value 
-                            ? "border-[var(--pink-500)] shadow-[3px_3px_0px_var(--black)] scale-110" 
-                            : "border-black hover:scale-105"
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
-                    ))}
-                    <div className="relative">
-                      <input
-                        type="color"
-                        value={form.accent_color}
-                        onChange={e => setForm(p => ({ ...p, accent_color: e.target.value }))}
-                        className="absolute inset-0 w-10 h-10 opacity-0 cursor-pointer"
-                      />
-                      <div 
-                        className="w-10 h-10 border-3 border-dashed border-gray-400 flex items-center justify-center hover:border-black transition-colors"
-                        style={{ backgroundColor: !ACCENT_COLORS.find(c => c.value === form.accent_color) ? form.accent_color : 'transparent' }}
-                      >
-                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold uppercase text-gray-700 mb-3">Button Color</label>
-                  <div className="flex flex-wrap gap-3">
-                    {ACCENT_COLORS.map(color => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        onClick={() => setForm(p => ({ ...p, button_color: color.value }))}
-                        className={`w-10 h-10 border-3 transition-all ${
-                          form.button_color === color.value 
-                            ? "border-[var(--pink-500)] shadow-[3px_3px_0px_var(--black)] scale-110" 
-                            : "border-black hover:scale-105"
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
-                    ))}
-                    <div className="relative">
-                      <input
-                        type="color"
-                        value={form.button_color}
-                        onChange={e => setForm(p => ({ ...p, button_color: e.target.value }))}
-                        className="absolute inset-0 w-10 h-10 opacity-0 cursor-pointer"
-                      />
-                      <div 
-                        className="w-10 h-10 border-3 border-dashed border-gray-400 flex items-center justify-center hover:border-black transition-colors"
-                        style={{ backgroundColor: !ACCENT_COLORS.find(c => c.value === form.button_color) ? form.button_color : 'transparent' }}
-                      >
-                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold uppercase text-gray-700 mb-3">Text Color</label>
-                  <div className="flex flex-wrap gap-3">
-                    {[
-                      { name: "Black", value: "#000000" },
-                      { name: "Dark Gray", value: "#374151" },
-                      { name: "Gray", value: "#6b7280" },
-                      { name: "White", value: "#ffffff" },
-                      { name: "Cream", value: "#fef3c7" },
-                    ].map(color => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        onClick={() => setForm(p => ({ ...p, text_color: color.value }))}
-                        className={`w-10 h-10 border-3 transition-all ${
-                          form.text_color === color.value 
-                            ? "border-[var(--pink-500)] shadow-[3px_3px_0px_var(--black)] scale-110" 
-                            : "border-black hover:scale-105"
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
-                    ))}
-                    <div className="relative">
-                      <input
-                        type="color"
-                        value={form.text_color}
-                        onChange={e => setForm(p => ({ ...p, text_color: e.target.value }))}
-                        className="absolute inset-0 w-10 h-10 opacity-0 cursor-pointer"
-                      />
-                      <div 
-                        className="w-10 h-10 border-3 border-dashed border-gray-400 flex items-center justify-center hover:border-black transition-colors"
-                        style={{ backgroundColor: form.text_color !== "#000000" && form.text_color !== "#374151" && form.text_color !== "#6b7280" && form.text_color !== "#ffffff" && form.text_color !== "#fef3c7" ? form.text_color : 'transparent' }}
-                      >
-                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 p-6 border-3 border-black" style={{ backgroundColor: form.page_color }}>
-                <p className="text-lg font-bold mb-2" style={{ color: form.text_color }}>Preview</p>
-                <p className="text-sm mb-4" style={{ color: form.text_color, opacity: 0.8 }}>This is how your text will look</p>
-                <div className="inline-block px-6 py-3 border-3 border-black font-bold" style={{ backgroundColor: form.accent_color }}>
-                  Price Section
-                </div>
-                <div className="inline-block ml-3 px-6 py-3 border-3 border-black font-bold text-white" style={{ backgroundColor: form.button_color }}>
-                  Buy Button
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => navigate(`/product/${productId}`)}
-                className="flex-1 py-4 font-bold uppercase border-3 border-black bg-white hover:bg-gray-100 shadow-[4px_4px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_var(--black)] transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 py-4 font-bold uppercase border-3 border-black bg-[var(--yellow-400)] shadow-[4px_4px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_var(--black)] transition-all disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </main>
     </div>
   );
+}
+
+function InputField({ label, value, onChange, placeholder, required, type = "text" }) {
+    return (
+        <div>
+            <label className="block text-xs font-black uppercase tracking-widest text-[#1d1d1f] mb-4">{label}</label>
+            <input
+                type={type}
+                value={value}
+                onChange={onChange}
+                className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-50 transition-all text-xl"
+                placeholder={placeholder}
+                required={required}
+            />
+        </div>
+    );
 }

@@ -91,6 +91,7 @@ app.use(compression());
 const allowedOrigins = [
   CLIENT_ORIGIN,
   'http://localhost:5173',
+  'http://localhost:5175',
   'http://localhost:3000',
 ];
 

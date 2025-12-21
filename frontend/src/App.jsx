@@ -9,6 +9,7 @@ import CheckoutSuccessPage from './components/CheckoutSuccessPage.jsx';
 import BrowsePage from './components/BrowsePage.jsx';
 import CreateProductPage from './components/CreateProductPage.jsx';
 import EditProductPage from './components/EditProductPage.jsx';
+import DiscountsPage from './components/DiscountsPage.jsx';
 import AdminPage from './components/AdminPage.jsx';
 import SellerPage from './components/SellerPage.jsx';
 import CartPage from './components/CartPage.jsx';
@@ -40,10 +41,11 @@ function App() {
         <Route path='/login' element={<LoginPage />} />
         <Route path='/auth/callback' element={<AuthCallbackPage />} />
         <Route path='/auth/verify-email' element={<VerifyEmailPage />} />
-        <Route path='/dashboard' element={<Dashboard />} />
-        <Route path='/create-product' element={<CreateProductPage />} />
-        <Route path='/edit-product/:productId' element={<EditProductPage />} />
-        <Route path='/library' element={<MyLibrary />} />
+          <Route path='/dashboard' element={<Dashboard />} />
+          <Route path='/create-product' element={<CreateProductPage />} />
+          <Route path='/edit-product/:productId' element={<EditProductPage />} />
+          <Route path='/discounts' element={<DiscountsPage />} />
+          <Route path='/library' element={<MyLibrary />} />
         <Route path='/profile' element={<Profile />} />
         <Route path='/settings/profile' element={<ProfileSettings />} />
         <Route path='/cart' element={<CartPage />} />
