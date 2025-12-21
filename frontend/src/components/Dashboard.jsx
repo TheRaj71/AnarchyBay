@@ -26,8 +26,9 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-    const [activeView, setActiveView] = useState("creator");
-    const [adminAnalytics, setAdminAnalytics] = useState(null);
+  const [activeView, setActiveView] = useState("creator");
+  const [adminAnalytics, setAdminAnalytics] = useState(null);
+  const [showBankSheet, setShowBankSheet] = useState(false);
 
     const fetchAdminAnalytics = async () => {
         try {
@@ -90,9 +91,12 @@ export default function Dashboard() {
         fetch(`${API_URL}/api/analytics/dashboard`, { headers }).then(res => res.json()).catch(() => ({ data: null }))
       ]);
 
+      console.log("User Analytics:", userRes);
+      console.log("Creator Analytics:", dashboardRes);
+
       setAnalytics({
-        user: userRes.data,
-        creator: dashboardRes.data
+        user: userRes.data || userRes,
+        creator: dashboardRes.data || dashboardRes
       });
       if (refreshing) toast.success("Dashboard synced with latest data");
     } catch (err) {
@@ -409,9 +413,31 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        <button className="w-full py-4.5 bg-[#0071e3] text-white rounded-[1.25rem] font-bold text-sm hover:bg-[#0077ed] transition-all transform active:scale-[0.98] shadow-lg shadow-blue-900/40">
+                        <button
+                            className="w-full py-4.5 bg-[#0071e3] text-white rounded-[1.25rem] font-bold text-sm hover:bg-[#0077ed] transition-all transform active:scale-[0.98] shadow-lg shadow-blue-900/40"
+                            onClick={() => setShowBankSheet(true)}
+                        >
                             Transfer to Bank
                         </button>
+                        {showBankSheet && (
+                          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowBankSheet(false)}>
+                            <div
+                              className="w-full max-w-md bg-white rounded-t-3xl p-8 shadow-2xl animate-in slide-in-from-bottom-6 duration-300"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <h2 className="text-xl font-bold mb-4">Coming Soon</h2>
+                              <p className="text-gray-600 mb-6">
+                                Bank transfer payouts will be available once your KYC is completed.
+                              </p>
+                              <button
+                                onClick={() => setShowBankSheet(false)}
+                                className="w-full py-3 rounded-xl bg-[#0071e3] text-white font-bold hover:bg-[#0077ed] transition-all"
+                              >
+                                Close
+                              </button>
+                            </div>
+                          </div>
+                        )}
                     </div>
                 </div>
 
