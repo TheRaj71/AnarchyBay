@@ -5,6 +5,8 @@ import NavBar from './NavBar';
 import { toast } from 'sonner';
 import { getAccessToken } from '@/lib/api/client';
 import { useRazorpay } from "react-razorpay";
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingBag, Trash2, ArrowRight, ShieldCheck, Zap, Minus, Plus, CreditCard } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -82,7 +84,7 @@ export default function CartPage() {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
-          name: "Anarchy Bay",
+          name: "BitShelf",
           description: `Purchase of ${cartItems.length} items`,
           image: "/favicon_io/android-chrome-512x512.png",
           order_id: orderData.orderId,
@@ -143,14 +145,20 @@ export default function CartPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#fafafa]">
         <NavBar />
         <main className="pt-24 pb-20">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <div className="animate-pulse space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-32 bg-gray-200 border-3 border-black" />
-              ))}
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="animate-pulse space-y-8">
+              <div className="h-12 w-48 bg-gray-200 rounded-lg mb-8" />
+              <div className="grid lg:grid-cols-3 gap-10">
+                <div className="lg:col-span-2 space-y-4">
+                  {[1, 2].map(i => (
+                    <div key={i} className="h-40 bg-gray-200 rounded-3xl" />
+                  ))}
+                </div>
+                <div className="h-96 bg-gray-200 rounded-3xl" />
+              </div>
             </div>
           </div>
         </main>
@@ -159,104 +167,182 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#fafafa]">
       <NavBar />
 
-      <main className="pt-24 pb-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h1 className="text-4xl md:text-5xl font-black uppercase italic mb-8 tracking-tighter">
-            Your <span className="text-[var(--pink-500)] underline">Cart</span>
-          </h1>
+      <main className="pt-28 pb-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <header className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-4xl sm:text-6xl font-black uppercase italic tracking-tight text-black">
+                Your <span className="text-blue-600">Cart</span>
+              </h1>
+              <p className="text-gray-500 font-bold mt-2 flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4" /> {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} ready for checkout
+              </p>
+            </div>
+            {cartItems.length > 0 && (
+              <button 
+                onClick={() => navigate('/browse')}
+                className="text-sm font-black uppercase tracking-wider text-gray-400 hover:text-black transition-colors flex items-center gap-2 border-b-2 border-transparent hover:border-black pb-1"
+              >
+                Continue Shopping <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </header>
 
           {cartItems.length === 0 ? (
-            <div className="bg-white border-4 border-black shadow-[10px_10px_0px_var(--black)] p-16 text-center">
-              <div className="text-8xl mb-8">🛒</div>
-              <h2 className="text-3xl font-black uppercase italic mb-6">Your cart is empty</h2>
-              <p className="text-gray-600 mb-10 font-bold text-lg">Browse our products and add items to your cart</p>
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white border-2 border-black/5 rounded-[3rem] p-12 sm:p-20 text-center shadow-xl shadow-black/5"
+            >
+              <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8">
+                <ShoppingBag className="w-16 h-16 text-gray-200" />
+              </div>
+              <h2 className="text-3xl font-black uppercase italic mb-4">Your cart is empty</h2>
+              <p className="text-gray-500 mb-10 font-bold text-lg max-w-sm mx-auto">Looks like you haven't added anything to your cart yet.</p>
               <button
                 onClick={() => navigate('/browse')}
-                className="px-12 py-5 font-black uppercase italic bg-[var(--yellow-400)] text-black border-4 border-black shadow-[6px_6px_0px_var(--black)] hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_var(--black)] transition-all"
+                className="group px-12 py-5 font-black uppercase italic bg-black text-white rounded-2xl hover:bg-blue-600 transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-2xl shadow-blue-200"
               >
                 Browse Products
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-            </div>
+            </motion.div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-10">
+            <div className="grid lg:grid-cols-3 gap-12">
+              {/* Items List */}
               <div className="lg:col-span-2 space-y-6">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="bg-white border-4 border-black shadow-[6px_6px_0px_var(--black)] p-6 flex gap-6 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_var(--black)] transition-all">
-                    <Link to={`/product/${item.product_id}`} className="w-32 h-32 flex-shrink-0 bg-gray-100 border-4 border-black overflow-hidden shadow-[3px_3px_0px_var(--black)]">
-                      {item.product?.thumbnail_url ? (
-                        <img src={item.product.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-5xl">📦</div>
-                      )}
-                    </Link>
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div>
-                        <Link to={`/product/${item.product_id}`} className="font-black text-2xl uppercase italic hover:text-[var(--pink-500)] transition-colors line-clamp-1">
-                          {item.product?.name || 'Product'}
-                        </Link>
-                        <p className="text-sm text-gray-600 font-bold line-clamp-2 mt-2">{item.product?.description}</p>
+                <AnimatePresence mode="popLayout">
+                  {cartItems.map((item) => (
+                    <motion.div 
+                      key={item.id}
+                      layout
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 20, opacity: 0 }}
+                      className="group bg-white border border-black/5 rounded-[2.5rem] p-5 sm:p-7 flex flex-col sm:flex-row gap-6 sm:items-center hover:border-black/20 hover:shadow-2xl transition-all duration-500"
+                    >
+                      <Link to={`/product/${item.product_id}`} className="w-full sm:w-32 h-48 sm:h-32 flex-shrink-0 bg-gray-50 rounded-3xl overflow-hidden border border-black/5">
+                        {item.product?.thumbnail_url ? (
+                          <img src={item.product.thumbnail_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-5xl">📦</div>
+                        )}
+                      </Link>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-4">
+                          <Link to={`/product/${item.product_id}`} className="font-black text-2xl uppercase italic hover:text-blue-600 transition-colors line-clamp-1 tracking-tight">
+                            {item.product?.name || 'Product'}
+                          </Link>
+                          <button
+                            onClick={() => removeFromCart(item.product_id)}
+                            className="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                            title="Remove from cart"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                        
+                        <p className="text-sm text-gray-400 font-bold line-clamp-2 mt-1 mb-4 leading-relaxed">
+                          {item.product?.description}
+                        </p>
+                        
+                        <div className="flex items-center justify-between border-t border-black/5 pt-4">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-300 bg-gray-50 px-3 py-1 rounded-full">
+                              Digital Asset
+                            </span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-green-500 bg-green-50 px-3 py-1 rounded-full">
+                              In Stock
+                            </span>
+                          </div>
+                          <span className="font-black text-2xl text-black tracking-tighter">
+                            {currencySymbol}{item.product?.price || 0}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between mt-4">
-                        <span className="font-black text-2xl text-[var(--pink-600)]">
-                          {currencySymbol}{item.product?.price || 0}
-                        </span>
-                        <button
-                          onClick={() => removeFromCart(item.product_id)}
-                          className="px-4 py-2 font-black text-sm uppercase bg-black text-white border-3 border-black shadow-[3px_3px_0px_var(--black)] hover:bg-white hover:text-black transition-all"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* Secure Badge */}
+                <div className="flex items-center justify-center gap-8 py-8 opacity-40 grayscale">
+                   <div className="flex items-center gap-2">
+                     <ShieldCheck className="w-5 h-5" />
+                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Secure Checkout</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <Zap className="w-5 h-5" />
+                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Instant Delivery</span>
+                   </div>
+                </div>
               </div>
 
+              {/* Order Summary */}
               <div className="lg:col-span-1">
-                <div className="bg-[var(--mint)] border-4 border-black shadow-[8px_8px_0px_var(--black)] p-8 sticky top-24">
-                  <h2 className="font-black text-2xl uppercase italic mb-6 border-b-4 border-black pb-2">Summary</h2>
+                <div className="bg-white border-2 border-black/5 rounded-[3rem] p-10 sticky top-28 shadow-2xl shadow-black/5 overflow-hidden">
+                  <h2 className="font-black text-2xl uppercase italic mb-8 border-b border-black/5 pb-4">Order Summary</h2>
                   
-                  <div className="space-y-4 mb-8">
-                    {cartItems.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm font-bold">
-                        <span className="truncate max-w-[140px] uppercase">{item.product?.name}</span>
-                        <span className="font-black">{currencySymbol}{item.product?.price || 0}</span>
-                      </div>
-                    ))}
+                  <div className="space-y-5 mb-10">
+                    <div className="flex justify-between items-center text-gray-500 font-bold text-sm">
+                      <span className="uppercase tracking-wider">Subtotal ({cartItems.length} items)</span>
+                      <span className="text-black font-black text-lg">{currencySymbol}{total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-gray-500 font-bold text-sm">
+                      <span className="uppercase tracking-wider">Estimated Tax</span>
+                      <span className="text-black font-black text-lg">{currencySymbol}0.00</span>
+                    </div>
+                    <div className="flex justify-between items-center text-blue-600 font-bold text-sm bg-blue-50 px-4 py-2 rounded-xl">
+                      <span className="uppercase tracking-wider">Promo Applied</span>
+                      <span className="font-black text-lg">-$0.00</span>
+                    </div>
                   </div>
 
-                  <div className="border-t-4 border-black pt-6 mb-8">
-                    <div className="flex justify-between items-center">
-                      <span className="font-black text-2xl uppercase italic">Total</span>
-                      <span className="font-black text-3xl text-[var(--pink-600)]">{currencySymbol}{total}</span>
+                  <div className="border-t-2 border-dashed border-black/5 pt-8 mb-10">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <span className="font-black uppercase text-xs tracking-[0.2em] text-gray-400 block mb-1">Grand Total</span>
+                        <span className="font-black text-5xl text-black tracking-tighter italic">
+                          {currencySymbol}{total.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                    <p className="font-black uppercase text-xs mt-2 text-gray-700">{cartItems.length} item{cartItems.length !== 1 ? 's' : ''} in bag</p>
                   </div>
 
                   <button
                     onClick={handleCheckout}
                     disabled={checkingOut}
-                    className="w-full py-5 font-black text-xl uppercase italic bg-[var(--pink-500)] text-white border-4 border-black shadow-[6px_6px_0px_var(--black)] hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_var(--black)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[4px_4px_0px_var(--black)] transition-all disabled:opacity-50"
+                    className="group w-full py-6 font-black text-xl uppercase italic bg-black text-white rounded-[2rem] hover:bg-blue-600 transition-all duration-300 disabled:opacity-50 disabled:bg-gray-200 flex items-center justify-center gap-4 shadow-2xl shadow-blue-200 active:scale-[0.98]"
                   >
                     {checkingOut ? (
-                      <span className="flex items-center justify-center gap-4">
-                        <span className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
-                        Processing...
-                      </span>
+                      <span className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      'CHECKOUT NOW'
+                      <>
+                        <CreditCard className="w-6 h-6" />
+                        Pay Securely
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </>
                     )}
                   </button>
                   
-                  <div className="flex items-center justify-center gap-2 mt-4">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <p className="font-black uppercase text-xs text-gray-700">
-                      Secure Payment via Razorpay
+                  <div className="mt-8 flex flex-col items-center gap-4 text-center">
+                    <div className="flex -space-x-2">
+                       {[1,2,3,4].map(i => (
+                         <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center overflow-hidden">
+                           <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="" />
+                         </div>
+                       ))}
+                    </div>
+                    <p className="font-bold text-[10px] text-gray-400 uppercase tracking-widest leading-relaxed">
+                      Joined by <span className="text-black">2,000+</span> creators <br/> buying assets daily
                     </p>
                   </div>
+
+                  {/* Decorative Gradient */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
                 </div>
               </div>
             </div>

@@ -3,14 +3,15 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/auth/use-auth";
 import { getPurchase, getPurchasesByOrder, getDownloadUrls } from "@/services/purchase.service";
 import NavBar from "./NavBar";
+import BlueTick from "./ui/BlueTick";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, Download, ArrowRight, Library, ShoppingBag, Loader2, Sparkles, ShieldCheck } from "lucide-react";
+import { Download, ArrowRight, Library, ShoppingBag, Loader2, Sparkles, ShieldCheck, Mail, Printer, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -109,15 +110,18 @@ export default function CheckoutSuccessPage() {
     return (
       <div className="min-h-screen bg-white">
         <NavBar />
-        <div className="pt-32 flex flex-col items-center justify-center p-4">
+        <div className="pt-32 flex flex-col items-center justify-center p-4 text-center">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="flex flex-col items-center"
+            className="flex flex-col items-center max-w-md"
           >
-            <Loader2 className="w-16 h-16 text-[var(--pink-500)] animate-spin mb-6" />
-            <h2 className="text-2xl font-black uppercase italic tracking-tighter">Verifying Payment</h2>
-            <p className="text-gray-500 font-bold mt-2">Almost there, securing your assets...</p>
+            <div className="relative mb-12">
+              <div className="absolute inset-0 bg-blue-100 blur-3xl rounded-full opacity-50 scale-150 animate-pulse"></div>
+              <Loader2 className="w-20 h-20 text-black animate-spin relative z-10" strokeWidth={1.5} />
+            </div>
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter text-black">Verifying Payment</h2>
+            <p className="text-gray-500 font-bold mt-4 px-6">We're finalizing your transaction and securing your assets. This usually takes just a few seconds.</p>
           </motion.div>
         </div>
       </div>
@@ -135,14 +139,14 @@ export default function CheckoutSuccessPage() {
             className="bg-white border-4 border-black shadow-[8px_8px_0px_var(--black)] p-10 text-center"
           >
             <div className="w-20 h-20 bg-red-100 border-4 border-black rounded-full mx-auto flex items-center justify-center mb-6">
-              <span className="text-4xl font-black">!</span>
+              <span className="text-4xl font-black text-black">!</span>
             </div>
-            <h1 className="text-3xl font-black mb-4 uppercase italic tracking-tight">Something went wrong</h1>
+            <h1 className="text-3xl font-black mb-4 uppercase italic tracking-tight text-black">Something went wrong</h1>
             <p className="text-gray-600 mb-8 font-bold leading-relaxed">{error}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/library"
-                className="px-8 py-4 bg-[var(--pink-500)] text-white border-3 border-black shadow-[4px_4px_0px_var(--black)] font-black uppercase hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_var(--black)] transition-all flex items-center justify-center gap-2"
+                className="px-8 py-4 bg-black text-white border-3 border-black shadow-[4px_4px_0px_var(--black)] font-black uppercase hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_var(--black)] transition-all flex items-center justify-center gap-2"
               >
                 <Library className="w-5 h-5" /> My Library
               </Link>
@@ -164,12 +168,12 @@ export default function CheckoutSuccessPage() {
   const currencySymbol = currency === "INR" ? "₹" : "$";
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#fafafa]">
       <NavBar />
       
-      {/* Sparkles/Confetti Effect Mockup */}
+      {/* Confetti Animation */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
-        {[...Array(12)].map((_, i) => (
+        {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
             initial={{ 
@@ -184,60 +188,65 @@ export default function CheckoutSuccessPage() {
               scale: [0, 1, 1, 0]
             }}
             transition={{ 
-              duration: 3 + Math.random() * 2,
+              duration: 4 + Math.random() * 2,
               repeat: Infinity,
               delay: Math.random() * 2
             }}
-            className={`absolute w-4 h-4 rounded-sm border-2 border-black ${
-              ["bg-[var(--pink-500)]", "bg-[var(--mint)]", "bg-[var(--yellow-400)]", "bg-blue-400"][i % 4]
+            className={`absolute w-3 h-3 rounded-full opacity-40 ${
+              ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-yellow-500"][i % 4]
             }`}
           />
         ))}
       </div>
 
-      <main className="pt-28 pb-20 max-w-4xl mx-auto px-4 relative">
+      <main className="pt-24 pb-20 max-w-5xl mx-auto px-4 relative">
         <motion.div 
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="bg-white border-4 border-black shadow-[12px_12px_0px_var(--black)] overflow-hidden"
+          className="bg-white border-2 border-black/10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] rounded-3xl overflow-hidden"
         >
           {/* Header Section */}
-          <div className="bg-[var(--mint)] border-b-4 border-black p-8 sm:p-12 text-center relative overflow-hidden">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", damping: 12, delay: 0.2 }}
-              className="w-24 h-24 bg-white border-4 border-black rounded-full mx-auto flex items-center justify-center mb-6 shadow-[6px_6px_0px_var(--black)] relative z-10"
-            >
-              <CheckCircle className="w-14 h-14 text-black" strokeWidth={2.5} />
-            </motion.div>
+          <div className="bg-white border-b border-black/5 p-8 sm:p-12 text-center relative overflow-hidden">
+            <div className="flex justify-center mb-8">
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              >
+                <BlueTick checked={true} />
+              </motion.div>
+            </div>
             
-            <h1 className="text-5xl sm:text-6xl font-black uppercase italic mb-4 tracking-tighter relative z-10">
-              PAYMENT <span className="text-white drop-shadow-[2px_2px_0px_black]">SUCCESS!</span>
-            </h1>
-            <p className="font-black text-xl sm:text-2xl uppercase tracking-tight max-w-md mx-auto relative z-10">
-              Your assets have been delivered to your library.
-            </p>
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h1 className="text-4xl sm:text-6xl font-black uppercase italic mb-4 tracking-tight text-black">
+                Order <span className="text-blue-600">Confirmed</span>
+              </h1>
+              <p className="font-bold text-lg text-gray-500 max-w-lg mx-auto leading-relaxed">
+                Thank you for your purchase! Your assets are now available in your library and ready for download.
+              </p>
+            </motion.div>
 
             {/* Background elements */}
-            <div className="absolute top-0 right-0 p-4 opacity-20">
-              <Sparkles className="w-24 h-24" />
-            </div>
-            <div className="absolute bottom-0 left-0 p-4 opacity-20 rotate-180">
-              <Sparkles className="w-24 h-24" />
+            <div className="absolute top-0 left-0 p-8 opacity-5">
+              <Sparkles className="w-32 h-32" />
             </div>
           </div>
 
-          <div className="p-6 sm:p-10 lg:p-12">
-            <div className="grid lg:grid-cols-[1.5fr_1fr] gap-10">
-              {/* Left Column: Purchased Items */}
-              <div className="space-y-8">
-                <div>
-                  <div className="flex items-center justify-between mb-6 border-b-4 border-black pb-2">
-                    <h3 className="font-black text-2xl uppercase italic flex items-center gap-2">
-                      <ShoppingBag className="w-6 h-6" /> Your Items
+          <div className="p-6 sm:p-10 lg:p-12 bg-white">
+            <div className="grid lg:grid-cols-[1.6fr_1fr] gap-12">
+              {/* Left Column: Details */}
+              <div className="space-y-10">
+                {/* Items Section */}
+                <section>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-black text-xl uppercase tracking-tighter flex items-center gap-2">
+                      <ShoppingBag className="w-5 h-5" /> Purchased Items
                     </h3>
-                    <span className="bg-black text-white px-3 py-1 font-black text-sm uppercase">
+                    <span className="text-xs font-black uppercase tracking-widest text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
                       {purchases.length} Product{purchases.length > 1 ? 's' : ''}
                     </span>
                   </div>
@@ -247,35 +256,35 @@ export default function CheckoutSuccessPage() {
                       {purchases.map((purchase, idx) => (
                         <motion.div 
                           key={purchase.id}
-                          initial={{ x: -20, opacity: 0 }}
+                          initial={{ x: -10, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: 0.1 * idx }}
-                          className="group flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white border-3 border-black p-4 shadow-[4px_4px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_var(--black)] transition-all"
+                          transition={{ delay: 0.1 * idx + 0.4 }}
+                          className="group flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white border border-black/5 p-5 rounded-2xl hover:border-black/20 hover:shadow-xl transition-all duration-300"
                         >
-                          <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                            <div className="w-16 h-16 bg-[var(--pink-50)] border-2 border-black flex items-center justify-center shrink-0 overflow-hidden">
+                          <div className="flex items-center gap-5 mb-4 sm:mb-0">
+                            <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border border-black/5">
                               {purchase.products?.thumbnail_url ? (
                                 <img src={purchase.products.thumbnail_url} className="w-full h-full object-cover" alt="" />
-                              ) : <ShoppingBag className="w-8 h-8" />}
+                              ) : <ShoppingBag className="w-8 h-8 text-gray-300" />}
                             </div>
                             <div>
-                              <p className="font-black text-lg line-clamp-1 group-hover:text-[var(--pink-500)] transition-colors">
+                              <p className="font-black text-lg text-black group-hover:text-blue-600 transition-colors">
                                 {purchase.products?.name}
                               </p>
-                              <div className="flex items-center gap-3 mt-1">
+                              <div className="flex items-center gap-4 mt-1">
                                 <Link 
                                   to={`/download/${purchase.id}`} 
-                                  className="text-xs font-black uppercase text-blue-600 hover:underline flex items-center gap-1"
+                                  className="text-[11px] font-black uppercase text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors"
                                 >
                                   <Download className="w-3 h-3" /> Manual Download
                                 </Link>
-                                <span className="text-gray-300 text-xs">|</span>
-                                <span className="text-[10px] font-bold text-gray-400 uppercase">ID: {purchase.id.split('-')[0]}</span>
+                                <span className="text-gray-200">|</span>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ref: {purchase.id.split('-')[0]}</span>
                               </div>
                             </div>
                           </div>
-                          <div className="text-right w-full sm:w-auto border-t-2 border-dashed border-gray-200 sm:border-0 pt-3 sm:pt-0">
-                            <p className="font-black text-2xl tracking-tighter">
+                          <div className="text-right w-full sm:w-auto sm:pl-8">
+                            <p className="font-black text-2xl tracking-tighter text-black">
                               {currencySymbol}{parseFloat(purchase.amount || 0).toFixed(2)}
                             </p>
                           </div>
@@ -283,36 +292,52 @@ export default function CheckoutSuccessPage() {
                       ))}
                     </AnimatePresence>
                   </div>
-                </div>
+                </section>
 
-                {/* Auto-download status bar */}
-                <div className={`border-3 border-black p-6 flex flex-col sm:flex-row items-center gap-4 transition-colors ${
-                  downloadStatus === "completed" ? "bg-[var(--mint)]" : 
-                  downloadStatus === "failed" ? "bg-red-50" : "bg-blue-50"
+                {/* Delivery Info */}
+                <section className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100 flex flex-col sm:flex-row items-start gap-5">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-200">
+                    <Mail className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-sm uppercase tracking-wider text-blue-900 mb-1">Confirmation Sent</h4>
+                    <p className="text-blue-800/70 font-bold text-sm leading-relaxed">
+                      A detailed receipt and download instructions have been sent to <span className="text-blue-900 font-black">{user?.email || 'your email'}</span>.
+                    </p>
+                  </div>
+                </section>
+
+                {/* Download Status */}
+                <div className={`p-6 rounded-2xl border flex flex-col sm:flex-row items-center gap-5 transition-all duration-500 ${
+                  downloadStatus === "completed" ? "bg-green-50 border-green-100" : 
+                  downloadStatus === "failed" ? "bg-red-50 border-red-100" : "bg-gray-50 border-black/5"
                 }`}>
-                  <div className="bg-white border-2 border-black p-3 rounded-full shadow-[2px_2px_0px_black]">
+                  <div className={`p-3 rounded-xl shadow-sm ${
+                    downloadStatus === "completed" ? "bg-green-600" : 
+                    downloadStatus === "failed" ? "bg-red-600" : "bg-black"
+                  }`}>
                     {downloadStatus === "preparing" || downloadStatus === "downloading" ? (
-                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <Loader2 className="w-6 h-6 animate-spin text-white" />
                     ) : downloadStatus === "completed" ? (
-                      <ShieldCheck className="w-6 h-6 text-green-600" />
+                      <ShieldCheck className="w-6 h-6 text-white" />
                     ) : (
-                      <Download className="w-6 h-6" />
+                      <Download className="w-6 h-6 text-white" />
                     )}
                   </div>
                   <div className="flex-1 text-center sm:text-left">
-                    <p className="font-black uppercase text-sm tracking-widest text-gray-400">Download Status</p>
-                    <p className="font-black text-lg uppercase italic">
+                    <p className="font-black uppercase text-[10px] tracking-[0.2em] text-gray-400 mb-1">Delivery Pipeline</p>
+                    <p className="font-black text-black text-lg">
                       {downloadStatus === "idle" && "Initializing downloads..."}
-                      {downloadStatus === "preparing" && "Preparing your high-quality assets..."}
-                      {downloadStatus === "downloading" && "Downloading files to your device..."}
-                      {downloadStatus === "completed" && "All downloads triggered successfully!"}
-                      {downloadStatus === "failed" && "Auto-download interrupted. Please use manual links."}
+                      {downloadStatus === "preparing" && "Preparing your assets..."}
+                      {downloadStatus === "downloading" && "Downloading files..."}
+                      {downloadStatus === "completed" && "Downloads started successfully!"}
+                      {downloadStatus === "failed" && "Download interrupted. Use manual links."}
                     </p>
                   </div>
                   {downloadStatus === "failed" && (
                     <button 
                       onClick={() => { downloadTriggered.current = false; handleAutoDownload(); }}
-                      className="px-4 py-2 bg-black text-white font-black text-xs uppercase border-2 border-black"
+                      className="px-5 py-2.5 bg-black text-white font-black text-xs uppercase rounded-lg hover:bg-gray-900 transition-colors"
                     >
                       Retry
                     </button>
@@ -320,61 +345,74 @@ export default function CheckoutSuccessPage() {
                 </div>
               </div>
 
-              {/* Right Column: Summary & Actions */}
-              <div className="space-y-6">
-                <div className="bg-black text-white p-8 border-4 border-black shadow-[8px_8px_0px_var(--pink-500)] relative overflow-hidden">
-                  <h3 className="font-black text-2xl uppercase italic mb-6 border-b-2 border-white/20 pb-2">Summary</h3>
+              {/* Right Column: Receipt & Actions */}
+              <div className="space-y-8">
+                <div className="bg-black rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
+                  <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+                    <h3 className="font-black text-xl uppercase italic">Invoice</h3>
+                    <div className="flex gap-3">
+                      <button className="p-2 hover:bg-white/10 rounded-lg transition-colors" title="Print Receipt">
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      <button className="p-2 hover:bg-white/10 rounded-lg transition-colors" title="View Externally">
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
                   
-                  <div className="space-y-4 mb-8">
-                    <div className="flex justify-between items-center opacity-70">
-                      <span className="font-bold uppercase text-sm">Subtotal</span>
-                      <span className="font-black">{currencySymbol}{total.toFixed(2)}</span>
+                  <div className="space-y-4 mb-10">
+                    <div className="flex justify-between items-center text-white/50">
+                      <span className="font-bold uppercase text-[11px] tracking-widest">Subtotal</span>
+                      <span className="font-black text-lg">{currencySymbol}{total.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between items-center opacity-70">
-                      <span className="font-bold uppercase text-sm">Transaction Fee</span>
-                      <span className="font-black">{currencySymbol}0.00</span>
+                    <div className="flex justify-between items-center text-white/50">
+                      <span className="font-bold uppercase text-[11px] tracking-widest">Taxes & Fees</span>
+                      <span className="font-black text-lg">{currencySymbol}0.00</span>
                     </div>
-                    <div className="border-t-2 border-dashed border-white/20 pt-4 flex justify-between items-center">
-                      <span className="font-black uppercase text-xl italic">Total Paid</span>
-                      <span className="font-black text-3xl text-[var(--pink-500)]">
-                        {currencySymbol}{total.toFixed(2)}
-                      </span>
+                    <div className="border-t border-dashed border-white/20 pt-6 flex justify-between items-end">
+                      <div>
+                        <span className="font-black uppercase text-xs tracking-widest text-white/40 block mb-1">Total Paid</span>
+                        <span className="font-black text-4xl text-white tracking-tighter">
+                          {currencySymbol}{total.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="bg-blue-600 text-[10px] font-black uppercase px-2 py-1 rounded-md mb-1 animate-pulse">
+                        Paid
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-[10px] font-bold uppercase tracking-widest opacity-50">
-                    <p>Order ID: {orderId || 'N/A'}</p>
-                    <p>Date: {new Date().toLocaleString()}</p>
-                    <p>Status: VERIFIED & COMPLETED</p>
+                  <div className="grid grid-cols-2 gap-4 text-[9px] font-bold uppercase tracking-[0.15em] text-white/30 border-t border-white/10 pt-6">
+                    <div>
+                      <p className="mb-1 text-white/50">Transaction ID</p>
+                      <p className="text-white/60 truncate">{orderId || purchaseId?.split('-')[0] || 'N/A'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="mb-1 text-white/50">Timestamp</p>
+                      <p className="text-white/60">{new Date().toLocaleDateString()}</p>
+                    </div>
                   </div>
 
-                  {/* Aesthetic design element */}
-                  <div className="absolute -bottom-6 -right-6 opacity-10 rotate-12">
-                    <Library className="w-32 h-32" />
-                  </div>
+                  {/* Decorative Elements */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -ml-12 -mb-12"></div>
                 </div>
 
                 <div className="flex flex-col gap-4">
                   <button
                     onClick={() => navigate("/library")}
-                    className="group w-full py-5 bg-[var(--yellow-400)] text-black border-4 border-black font-black text-xl uppercase italic shadow-[6px_6px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0px_var(--black)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[4px_4px_0px_var(--black)] transition-all flex items-center justify-center gap-3"
+                    className="group w-full py-5 bg-white text-black border-2 border-black rounded-2xl font-black text-xl uppercase italic hover:bg-black hover:text-white transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)]"
                   >
                     <Library className="w-6 h-6" /> 
-                    Open My Library
-                    <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                    Go to Library
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                   <button
                     onClick={() => navigate("/browse")}
-                    className="w-full py-5 bg-white text-black border-4 border-black font-black text-xl uppercase italic shadow-[6px_6px_0px_var(--black)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0px_var(--black)] transition-all flex items-center justify-center gap-3"
+                    className="w-full py-4 bg-transparent text-gray-400 font-black text-sm uppercase tracking-[0.2em] hover:text-black transition-colors"
                   >
-                    <ShoppingBag className="w-6 h-6" /> Keep Browsing
+                    Continue Shopping
                   </button>
-                </div>
-
-                <div className="text-center pt-4">
-                  <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
-                    Secured by 256-bit encryption
-                  </p>
                 </div>
               </div>
             </div>
@@ -382,13 +420,22 @@ export default function CheckoutSuccessPage() {
         </motion.div>
 
         {/* Support Section */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-500 font-bold mb-4">Having trouble with your purchase?</p>
-          <div className="flex justify-center gap-8">
-            <Link to="/help" className="text-sm font-black uppercase border-b-2 border-black hover:bg-black hover:text-white transition-colors">Help Center</Link>
-            <Link to="/contact" className="text-sm font-black uppercase border-b-2 border-black hover:bg-black hover:text-white transition-colors">Contact Support</Link>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="mt-16 text-center"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full mb-6">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">Support Active 24/7</span>
           </div>
-        </div>
+          <p className="text-gray-400 font-bold mb-6 text-sm">Facing issues? Our team is ready to help.</p>
+          <div className="flex justify-center gap-10">
+            <Link to="/help" className="text-[11px] font-black uppercase tracking-widest text-black border-b-2 border-black/5 hover:border-black transition-all">Help Center</Link>
+            <Link to="/contact" className="text-[11px] font-black uppercase tracking-widest text-black border-b-2 border-black/5 hover:border-black transition-all">Support Desk</Link>
+          </div>
+        </motion.div>
       </main>
     </div>
   );
