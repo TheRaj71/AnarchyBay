@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { getAccessToken } from "@/lib/api/client";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, BarChart, Bar
+    ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell,
+    LineChart, Line, Legend, RadialBarChart, RadialBar
 } from 'recharts';
 import { 
   Users, Package, DollarSign, TrendingUp, ShieldCheck, 
@@ -16,6 +17,10 @@ import {
 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Chart colors
+const ROLE_COLORS = ['#a78bfa', '#60a5fa', '#34d399', '#fbbf24', '#f87171'];
+const CATEGORY_COLORS = ['#fde047', '#fb923c', '#f472b6', '#a78bfa', '#60a5fa', '#34d399', '#fbbf24', '#f87171'];
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -57,7 +62,14 @@ export default function AdminPage() {
       if (activeTab === "overview") {
         const res = await fetch(`${API_URL}/api/analytics/admin`, { headers });
         const data = await res.json();
-        if (res.ok) setStats(data.data);
+        console.log("Analytics API Response:", data);
+        if (res.ok) {
+          // The response itself contains the data, not data.data
+          console.log("Setting stats:", data);
+          setStats(data);
+        } else {
+          console.error("API Error:", data);
+        }
       }
 
       if (activeTab === "users") {
@@ -329,28 +341,32 @@ export default function AdminPage() {
                         value={`₹${stats.totalGMV?.toLocaleString()}`} 
                         icon={<DollarSign size={28} />}
                         color="bg-blue-300"
+                        subtitle={`${stats.totalSales || 0} sales`}
                       />
                       <StatCard 
                         title="Platform Fee" 
                         value={`₹${stats.totalRevenue?.toLocaleString()}`} 
                         icon={<TrendingUp size={28} />}
                         color="bg-green-300"
+                        subtitle={`${((stats.totalRevenue / stats.totalGMV) * 100 || 0).toFixed(1)}% rate`}
                       />
                       <StatCard 
                         title="Total Users" 
                         value={stats.totalUsers} 
                         icon={<Users size={28} />}
                         color="bg-purple-300"
+                        subtitle={`${stats.activeUsers || 0} active`}
                       />
                       <StatCard 
                         title="Products" 
                         value={stats.totalProducts} 
                         icon={<Package size={28} />}
                         color="bg-yellow-300"
+                        subtitle={`${stats.activeProducts || 0} active`}
                       />
                     </div>
 
-                    {/* Charts */}
+                    {/* Main Charts Row */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       <div className="lg:col-span-2 bg-white rounded-none p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                         <h3 className="text-xl font-black mb-6 text-black">REVENUE TRENDS</h3>
@@ -413,6 +429,175 @@ export default function AdminPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Additional Metrics Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <MetricCard title="Avg Rating" value={(stats.avgRating || 0).toFixed(1)} icon="⭐" color="bg-yellow-200" />
+                      <MetricCard title="Total Reviews" value={stats.totalReviews || 0} icon="💬" color="bg-blue-200" />
+                      <MetricCard title="Downloads" value={stats.totalDownloads || 0} icon="⬇️" color="bg-green-200" />
+                      <MetricCard title="Wishlists" value={stats.totalWishlists || 0} icon="❤️" color="bg-pink-200" />
+                    </div>
+
+                    {/* Pie Charts Row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* User Role Distribution */}
+                      <div className="bg-white rounded-none p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                        <h3 className="text-xl font-black mb-6 text-black">USER ROLES</h3>
+                        <div className="h-64">
+                          {stats.roleStats && stats.roleStats.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={stats.roleStats}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                  outerRadius={80}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                  stroke="#000"
+                                  strokeWidth={2}
+                                >
+                                  {stats.roleStats.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={ROLE_COLORS[index % ROLE_COLORS.length]} />
+                                  ))}
+                                </Pie>
+                                <Tooltip 
+                                  contentStyle={{
+                                    backgroundColor: 'white',
+                                    border: '3px solid black',
+                                    borderRadius: '0',
+                                    fontWeight: 'bold'
+                                  }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="h-full flex items-center justify-center text-gray-400">
+                              <p className="text-sm font-bold">No data available</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Product Categories */}
+                      <div className="bg-white rounded-none p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                        <h3 className="text-xl font-black mb-6 text-black">CATEGORIES</h3>
+                        <div className="h-64">
+                          {stats.categoryStats && stats.categoryStats.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={stats.categoryStats}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                  outerRadius={80}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                  stroke="#000"
+                                  strokeWidth={2}
+                                >
+                                  {stats.categoryStats.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                                  ))}
+                                </Pie>
+                                <Tooltip 
+                                  contentStyle={{
+                                    backgroundColor: 'white',
+                                    border: '3px solid black',
+                                    borderRadius: '0',
+                                    fontWeight: 'bold'
+                                  }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="h-full flex items-center justify-center text-gray-400">
+                              <p className="text-sm font-bold">No data available</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Radial Progress Chart */}
+                      <div className="bg-gradient-to-br from-purple-300 to-pink-300 rounded-none p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                        <h3 className="text-xl font-black mb-6 text-black">ACTIVITY</h3>
+                        <div className="h-64">
+                          {stats.activeUsers && stats.totalUsers ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RadialBarChart 
+                                cx="50%" 
+                                cy="50%" 
+                                innerRadius="30%" 
+                                outerRadius="90%" 
+                                barSize={20}
+                                data={[
+                                  { name: 'Active Users', value: (stats.activeUsers / stats.totalUsers) * 100, fill: '#22c55e' },
+                                  { name: 'Active Products', value: (stats.activeProducts / stats.totalProducts) * 100, fill: '#f59e0b' },
+                                ]}
+                                startAngle={90}
+                                endAngle={-270}
+                              >
+                                <RadialBar
+                                  label={{ position: 'insideStart', fill: '#fff', fontWeight: 'bold' }}
+                                  background={{ fill: '#e5e7eb' }}
+                                  dataKey="value"
+                                  stroke="#000"
+                                  strokeWidth={2}
+                                />
+                                <Legend 
+                                  iconSize={10} 
+                                  layout="vertical" 
+                                  verticalAlign="bottom" 
+                                  align="center"
+                                  wrapperStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                                />
+                              </RadialBarChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="h-full flex items-center justify-center text-gray-400">
+                              <p className="text-sm font-bold">No data available</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* User Growth Chart */}
+                    {stats.userGrowthChart && stats.userGrowthChart.length > 0 && (
+                      <div className="bg-white rounded-none p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                        <h3 className="text-xl font-black mb-6 text-black">USER GROWTH (LAST 30 DAYS)</h3>
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={stats.userGrowthChart}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#000" />
+                              <XAxis dataKey="date" stroke="#000" style={{fontSize: 12, fontWeight: 'bold'}} />
+                              <YAxis stroke="#000" style={{fontSize: 12, fontWeight: 'bold'}} />
+                              <Tooltip 
+                                contentStyle={{
+                                  backgroundColor: 'white',
+                                  border: '4px solid black',
+                                  borderRadius: '0',
+                                  fontWeight: 'bold'
+                                }}
+                              />
+                              <Legend wrapperStyle={{fontWeight: 'bold'}} />
+                              <Line 
+                                type="monotone" 
+                                dataKey="users" 
+                                stroke="#8b5cf6" 
+                                strokeWidth={3}
+                                dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 5, stroke: '#000' }}
+                                activeDot={{ r: 7 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -881,7 +1066,7 @@ function SidebarButton({ icon, label, active, onClick, badge, badgeColor = "bg-b
   );
 }
 
-function StatCard({ title, value, icon, color }) {
+function StatCard({ title, value, icon, color, subtitle }) {
   return (
     <div className={`${color} rounded-none p-6 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all`}>
       <div className="w-16 h-16 rounded-none bg-black flex items-center justify-center text-white border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mb-4">
@@ -889,6 +1074,19 @@ function StatCard({ title, value, icon, color }) {
       </div>
       <p className="text-sm font-black text-black uppercase mb-2">{title}</p>
       <p className="text-3xl font-black text-black">{value}</p>
+      {subtitle && <p className="text-xs font-bold text-gray-700 mt-2">{subtitle}</p>}
+    </div>
+  );
+}
+
+function MetricCard({ title, value, icon, color }) {
+  return (
+    <div className={`${color} rounded-none p-6 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all`}>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-black text-black uppercase">{title}</p>
+        <span className="text-3xl">{icon}</span>
+      </div>
+      <p className="text-4xl font-black text-black">{value}</p>
     </div>
   );
 }

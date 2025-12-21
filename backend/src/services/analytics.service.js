@@ -79,7 +79,7 @@ export const getAdminAnalytics = async (options = {}) => {
   const stats = await getAdminGlobalStats(options);
   if (stats.error) return { error: stats.error };
 
-  const { purchases } = stats.data;
+  const { purchases, userGrowth, roleDistribution, categoryDistribution } = stats.data;
   
   // Group revenue by day for chart
   const revenueChart = {};
@@ -90,10 +90,28 @@ export const getAdminAnalytics = async (options = {}) => {
     revenueChart[key].platform_fee += parseFloat(p.platform_fee);
   });
 
+  // Convert user growth to array format
+  const userGrowthChart = Object.entries(userGrowth || {})
+    .map(([date, count]) => ({ date, users: count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // Convert role distribution to array format for pie chart
+  const roleStats = Object.entries(roleDistribution || {})
+    .map(([name, value]) => ({ name: name.toUpperCase(), value }));
+
+  // Convert category distribution to array format for pie chart
+  const categoryStats = Object.entries(categoryDistribution || {})
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8); // Top 8 categories
+
   return {
     data: {
       ...stats.data,
-      revenueChart: Object.values(revenueChart)
+      revenueChart: Object.values(revenueChart),
+      userGrowthChart,
+      roleStats,
+      categoryStats
     }
   };
 };

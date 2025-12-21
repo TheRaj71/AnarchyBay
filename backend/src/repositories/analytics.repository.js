@@ -264,7 +264,7 @@ export const getAdminGlobalStats = async (options = {}) => {
 
   let purchasesQuery = supabase
     .from("purchases")
-    .select("amount, platform_fee, status, purchased_at")
+    .select("amount, platform_fee, status, purchased_at, product_id, products!inner(category, is_active)")
     .eq("status", "completed");
 
   if (startDate) purchasesQuery = purchasesQuery.gte("purchased_at", startDate);
@@ -277,12 +277,92 @@ export const getAdminGlobalStats = async (options = {}) => {
   const totalRevenue = purchases.reduce((sum, p) => sum + parseFloat(p.platform_fee), 0);
   const totalSales = purchases.length;
 
-  const { count: totalUsers, error: uError } = await supabase
+  // Get all profiles with role distribution
+  const { data: allProfiles, error: uError } = await supabase
     .from("profiles")
-    .select("*", { count: "exact", head: true });
+    .select("role, created_at, is_active");
   
-  const { count: totalProducts, error: prError } = await supabase
+  if (uError) return { error: uError };
+
+  const totalUsers = allProfiles?.length || 0;
+  const activeUsers = allProfiles?.filter(u => u.is_active !== false).length || 0;
+  
+  // Role distribution
+  const roleDistribution = {};
+  allProfiles?.forEach(profile => {
+    const role = profile.role || 'customer';
+    roleDistribution[role] = (roleDistribution[role] || 0) + 1;
+  });
+
+  // User growth over time (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const userGrowth = {};
+  allProfiles?.forEach(profile => {
+    const date = new Date(profile.created_at);
+    if (date >= thirtyDaysAgo) {
+      const key = date.toISOString().split("T")[0];
+      userGrowth[key] = (userGrowth[key] || 0) + 1;
+    }
+  });
+
+  // Get all products with status
+  const { data: allProducts, error: prError } = await supabase
     .from("products")
+    .select("id, is_active, category, created_at, sales_count, price");
+
+  if (prError) return { error: prError };
+
+  const totalProducts = allProducts?.length || 0;
+  const activeProducts = allProducts?.filter(p => p.is_active).length || 0;
+  
+  // Category distribution
+  const categoryDistribution = {};
+  allProducts?.forEach(product => {
+    const categories = product.category || ["Uncategorized"];
+    categories.forEach(cat => {
+      categoryDistribution[cat] = (categoryDistribution[cat] || 0) + 1;
+    });
+  });
+
+  // Product performance (top by sales_count)
+  const topProductsBySales = allProducts
+    ?.filter(p => p.sales_count > 0)
+    ?.sort((a, b) => b.sales_count - a.sales_count)
+    ?.slice(0, 10)
+    ?.map(p => ({ id: p.id, sales: p.sales_count, price: p.price })) || [];
+
+  // Payment provider distribution
+  const paymentProviders = {};
+  purchases.forEach(p => {
+    // Infer from purchase data if available, default to 'razorpay'
+    const provider = 'razorpay'; // This would need payment_provider field
+    paymentProviders[provider] = (paymentProviders[provider] || 0) + 1;
+  });
+
+  // Reviews stats
+  const { data: reviews, error: rError } = await supabase
+    .from("reviews")
+    .select("rating, created_at");
+
+  const totalReviews = reviews?.length || 0;
+  const avgRating = reviews?.length > 0 
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length 
+    : 0;
+
+  // Downloads stats
+  const { count: totalDownloads, error: dError } = await supabase
+    .from("download_logs")
+    .select("*", { count: "exact", head: true });
+
+  // Cart stats
+  const { count: totalCarts, error: cError } = await supabase
+    .from("carts")
+    .select("*", { count: "exact", head: true });
+
+  // Wishlist stats
+  const { count: totalWishlists, error: wError } = await supabase
+    .from("wishlists")
     .select("*", { count: "exact", head: true });
 
   return {
@@ -291,8 +371,20 @@ export const getAdminGlobalStats = async (options = {}) => {
       totalRevenue,
       totalSales,
       totalUsers,
+      activeUsers,
       totalProducts,
-      purchases
+      activeProducts,
+      totalReviews,
+      avgRating,
+      totalDownloads: totalDownloads || 0,
+      totalCarts: totalCarts || 0,
+      totalWishlists: totalWishlists || 0,
+      purchases,
+      roleDistribution,
+      categoryDistribution,
+      paymentProviders,
+      userGrowth,
+      topProductsBySales
     }
   };
 };
