@@ -26,8 +26,10 @@ export default function DiscountsPage() {
     value: "",
     max_uses: "",
     expires_at: "",
-    product_ids: []
+    product_ids: [],
+    scope: "my_products" // "my_products" or "all_products"
   });
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -55,11 +57,23 @@ export default function DiscountsPage() {
 
   const fetchMyProducts = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/profile/user/${user.id}/products`);
-      const data = await res.json();
-      if (res.ok) setMyProducts(data.products || []);
+      const token = getAccessToken();
+      // Check if user is admin
+      const profileRes = await fetch(`${API_URL}/api/profile/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const profileData = await profileRes.json();
+      setUserRole(profileData.role);
+
+      // Fetch user's own products using the profile data id
+      if (profileData.id) {
+        const res = await fetch(`${API_URL}/api/profile/user/${profileData.id}/products`);
+        const data = await res.json();
+        setMyProducts(data.products || []);
+      }
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load products");
     }
   };
 
@@ -72,31 +86,52 @@ export default function DiscountsPage() {
 
     try {
       const token = getAccessToken();
-      const res = await fetch(`${API_URL}/api/discounts`, {
+      
+      // Create the discount code
+      const discountRes = await fetch(`${API_URL}/api/discounts`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}` 
         },
         body: JSON.stringify({
-          ...newDiscount,
+          code: newDiscount.code,
+          type: newDiscount.type,
           value: parseFloat(newDiscount.value),
-          max_uses: newDiscount.max_uses ? parseInt(newDiscount.max_uses) : null,
-          product_ids: newDiscount.product_ids
+          usageLimit: newDiscount.max_uses ? parseInt(newDiscount.max_uses) : null,
+          expiresAt: newDiscount.expires_at || null,
+          appliesTo: newDiscount.product_ids.length === 0 ? "all" : "specific"
         })
       });
 
-      if (res.ok) {
-        toast.success("Coupon code deployed successfully");
-        setShowCreate(false);
-        setNewDiscount({ code: "", type: "percentage", value: "", max_uses: "", expires_at: "", product_ids: [] });
-        fetchDiscounts();
-      } else {
-        const error = await res.json();
-        toast.error(error.message || "Failed to create coupon");
+      if (!discountRes.ok) {
+        const error = await discountRes.json();
+        throw new Error(error.error || "Failed to create coupon");
       }
+
+      const discountData = await discountRes.json();
+      
+      // If scope is "all_products" and user is admin, don't link any specific products (site-wide)
+      // If scope is "my_products" or user selected specific products, link them
+      if (newDiscount.scope === "my_products" && newDiscount.product_ids.length > 0) {
+        for (const productId of newDiscount.product_ids) {
+          await fetch(`${API_URL}/api/discounts/${discountData.id}/products`, {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}` 
+            },
+            body: JSON.stringify({ productId })
+          });
+        }
+      }
+
+      toast.success("Coupon code deployed successfully");
+      setShowCreate(false);
+      setNewDiscount({ code: "", type: "percentage", value: "", max_uses: "", expires_at: "", product_ids: [], scope: "my_products" });
+      fetchDiscounts();
     } catch (err) {
-      toast.error("Network connection failed");
+      toast.error(err.message || "Network connection failed");
     }
   };
 
@@ -229,37 +264,97 @@ export default function DiscountsPage() {
 
                     <div className="lg:col-span-5">
                         <div className="bg-gray-50/50 rounded-[2rem] p-8 border border-gray-100 h-full">
+                            {userRole === 'admin' && (
+                                <div className="mb-6 pb-6 border-b border-gray-200">
+                                    <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Coupon Scope</h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewDiscount(p => ({ ...p, scope: "my_products", product_ids: [] }))}
+                                            className={`p-4 rounded-xl text-sm font-bold transition-all ${
+                                                newDiscount.scope === "my_products"
+                                                    ? "bg-[#0071e3] text-white shadow-md"
+                                                    : "bg-white border border-gray-200 hover:border-blue-200"
+                                            }`}
+                                        >
+                                            My Products
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewDiscount(p => ({ ...p, scope: "all_products", product_ids: [] }))}
+                                            className={`p-4 rounded-xl text-sm font-bold transition-all ${
+                                                newDiscount.scope === "all_products"
+                                                    ? "bg-[#0071e3] text-white shadow-md"
+                                                    : "bg-white border border-gray-200 hover:border-blue-200"
+                                            }`}
+                                        >
+                                            All Products
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                                <ShoppingBag size={16} /> Asset Linking
+                                <ShoppingBag size={16} /> {newDiscount.scope === "all_products" ? "Site-wide Coupon" : "Product Linking (Optional)"}
                             </h3>
                             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
-                                {myProducts.map(p => (
-                                    <button
-                                        key={p.id}
-                                        type="button"
-                                        onClick={() => toggleProduct(p.id)}
-                                        className={`w-full flex items-center justify-between p-4 rounded-xl font-bold text-sm transition-all group ${
-                                            newDiscount.product_ids.includes(p.id) 
-                                                ? "bg-[#0071e3] text-white shadow-md" 
-                                                : "bg-white border border-gray-100 hover:border-blue-200"
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${newDiscount.product_ids.includes(p.id) ? 'bg-white/20' : 'bg-gray-50'}`}>
-                                                <Package size={14} />
-                                            </div>
-                                            <span className="truncate">{p.name}</span>
-                                        </div>
-                                        {newDiscount.product_ids.includes(p.id) ? <Check size={16} /> : <Plus size={16} className="text-gray-300 group-hover:text-blue-500" />}
-                                    </button>
-                                ))}
-                                {myProducts.length === 0 && (
+                                {newDiscount.scope === "all_products" ? (
                                     <div className="py-20 text-center">
-                                        <p className="text-gray-400 font-medium">No assets found in your registry.</p>
+                                        <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                            <Package size={40} className="text-blue-600" />
+                                        </div>
+                                        <p className="text-lg font-black text-blue-600 mb-2">Site-wide Coupon Active</p>
+                                        <p className="text-sm text-gray-500">This coupon will apply to ALL products in the marketplace</p>
+                                    </div>
+                                ) : myProducts.length > 0 ? (
+                                    myProducts.map(p => (
+                                        <button
+                                            key={p.id}
+                                            type="button"
+                                            onClick={() => toggleProduct(p.id)}
+                                            className={`w-full flex items-center justify-between p-4 rounded-xl font-bold text-sm transition-all group ${
+                                                newDiscount.product_ids.includes(p.id) 
+                                                    ? "bg-[#0071e3] text-white shadow-md" 
+                                                    : "bg-white border border-gray-100 hover:border-blue-200"
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden ${newDiscount.product_ids.includes(p.id) ? 'bg-white/20' : 'bg-gray-100'}`}>
+                                                    {p.thumbnail_url ? (
+                                                        <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Package size={16} />
+                                                    )}
+                                                </div>
+                                                <div className="text-left min-w-0">
+                                                    <span className="truncate block">{p.name}</span>
+                                                    <span className={`text-[10px] font-bold ${newDiscount.product_ids.includes(p.id) ? 'text-white/70' : 'text-gray-400'}`}>
+                                                        {p.currency === 'INR' ? '₹' : '$'}{p.price}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {newDiscount.product_ids.includes(p.id) ? <Check size={16} /> : <Plus size={16} className="text-gray-300 group-hover:text-blue-500" />}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="py-20 text-center">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                            <Package size={32} className="text-gray-300" />
+                                        </div>
+                                        <p className="text-gray-400 font-medium mb-2">No products found</p>
+                                        <p className="text-[11px] text-gray-400">Create products first to link them to coupons</p>
                                     </div>
                                 )}
                             </div>
-                            <p className="text-[10px] font-bold text-gray-400 mt-6 text-center italic">Leave empty to apply coupon to all products.</p>
+                            {newDiscount.scope !== "all_products" && (
+                                <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                    <p className="text-[10px] font-bold text-blue-600 text-center uppercase tracking-widest">
+                                        {newDiscount.product_ids.length === 0 
+                                            ? `✨ Applies to ALL your products (${myProducts.length})` 
+                                            : `🎯 Specific - Applies to ${newDiscount.product_ids.length} selected product${newDiscount.product_ids.length > 1 ? 's' : ''}`
+                                        }
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </form>

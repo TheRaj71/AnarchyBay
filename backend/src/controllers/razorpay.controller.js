@@ -3,7 +3,7 @@ import { logger } from "../lib/logger.js";
 
 export const createRazorpayOrderController = async (req, res) => {
   try {
-    const { productId, productIds, variantId, discountAmount, discountCodeId } = req.body;
+    const { productId, productIds, variantId, discountAmount, discountCodeId, discountCode } = req.body;
     const customerId = req.user.id;
 
     const result = await razorpayService.createRazorpayOrder({
@@ -13,6 +13,7 @@ export const createRazorpayOrderController = async (req, res) => {
       customerId,
       discountAmount,
       discountCodeId,
+      discountCode,
     });
 
     res.status(200).json(result);

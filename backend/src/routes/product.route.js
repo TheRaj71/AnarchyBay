@@ -52,7 +52,11 @@ router.delete("/variants/:id", requireAuth, requireCreator, deleteVariantControl
 router.get("/:productId/variants", getProductVariantsController);
 router.get("/:id", optionalAuth, getProductController);
 router.get("/:id/files", getProductFilesController);
-router.put("/:id", requireAuth, requireCreator, updateProductController);
+router.put("/:id", requireAuth, requireCreator, upload.fields([
+  { name: 'files', maxCount: 10 },
+  { name: 'thumbnail', maxCount: 1 },
+  { name: 'preview_images', maxCount: 10 }
+]), updateProductController);
 router.delete("/:id", requireAuth, requireCreator, deleteProductController);
 
 export default router;

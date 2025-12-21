@@ -35,6 +35,9 @@ export const createProductWithFilesController = async (req, res) => {
       tags: req.body.tags ? JSON.parse(req.body.tags) : [],
       preview_videos: req.body.preview_videos ? JSON.parse(req.body.preview_videos) : [],
       page_color: req.body.page_color || '#ffffff',
+      accent_color: req.body.accent_color || '#ffde59',
+      button_color: req.body.button_color || '#ec4899',
+      text_color: req.body.text_color || '#000000',
     };
 
     const files = req.files?.files || [];
@@ -55,7 +58,30 @@ export const createProductWithFilesController = async (req, res) => {
 export const updateProductController = async (req, res) => {
   try {
     console.log('Updating product:', req.params.id, 'with data:', req.body);
-    const { data, error } = await updateProduct(req.params.id, req.user.id, req.body);
+    
+    // Parse product data from FormData
+    const productData = {
+      name: req.body.name,
+      description: req.body.description || req.body.short_description || '',
+      short_description: req.body.short_description || '',
+      long_description: req.body.long_description || '',
+      price: req.body.price ? parseFloat(req.body.price) : undefined,
+      currency: req.body.currency || 'INR',
+      category: req.body.category ? JSON.parse(req.body.category) : undefined,
+      tags: req.body.tags ? JSON.parse(req.body.tags) : undefined,
+      preview_videos: req.body.preview_videos ? JSON.parse(req.body.preview_videos) : undefined,
+      page_color: req.body.page_color,
+      accent_color: req.body.accent_color,
+      button_color: req.body.button_color,
+      text_color: req.body.text_color,
+    };
+
+    // Remove undefined values
+    Object.keys(productData).forEach(key => 
+      productData[key] === undefined && delete productData[key]
+    );
+
+    const { data, error } = await updateProduct(req.params.id, req.user.id, productData);
     if (error) {
       console.error('Update product error:', error);
       return res.status(error.status || 400).json({ error: { message: error.message || 'Failed to update product' } });

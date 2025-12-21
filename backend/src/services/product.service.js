@@ -79,6 +79,9 @@ export const createProductWithFiles = async (creatorId, productData, files, thum
       preview_images: previewImageUrls,
       preview_videos: productData.preview_videos || [],
       page_color: productData.page_color || '#ffffff',
+      accent_color: productData.accent_color || '#ffde59',
+      button_color: productData.button_color || '#ec4899',
+      text_color: productData.text_color || '#000000',
     });
 
     if (productError) {

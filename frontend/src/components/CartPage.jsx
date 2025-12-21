@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { getAccessToken } from '@/lib/api/client';
 import { useRazorpay } from "react-razorpay";
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Trash2, ArrowRight, ShieldCheck, Zap, Minus, Plus, CreditCard } from 'lucide-react';
+import { ShoppingBag, Trash2, ArrowRight, ShieldCheck, Zap, CreditCard, X, Lock, CheckCircle2, Sparkles } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -16,6 +16,9 @@ export default function CartPage() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
   const { Razorpay } = useRazorpay();
 
   useEffect(() => {
@@ -50,9 +53,53 @@ export default function CartPage() {
       });
       setCartItems(prev => prev.filter(item => item.product_id !== productId));
       toast.success('Removed from cart');
+      if (appliedDiscount) {
+        validateCoupon(couponCode);
+      }
     } catch {
       toast.error('Failed to remove item');
     }
+  };
+
+  const validateCoupon = async (code) => {
+    if (!code.trim()) {
+      setAppliedDiscount(null);
+      return;
+    }
+
+    setValidatingCoupon(true);
+    try {
+      const token = getAccessToken();
+      const res = await fetch(`${API_URL}/api/discounts/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+
+      const data = await res.json();
+      
+      if (res.ok && data.valid) {
+        setAppliedDiscount(data.discount);
+        toast.success(`Coupon applied: ${data.discount.type === 'percentage' ? `${data.discount.value}%` : `₹${data.discount.value}`} off`);
+      } else {
+        setAppliedDiscount(null);
+        toast.error(data.error || 'Invalid coupon code');
+      }
+    } catch {
+      setAppliedDiscount(null);
+      toast.error('Failed to validate coupon');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setCouponCode('');
+    setAppliedDiscount(null);
+    toast.success('Coupon removed');
   };
 
   const handleCheckout = async () => {
@@ -66,28 +113,29 @@ export default function CartPage() {
       const token = getAccessToken();
       const productIds = cartItems.map(item => item.product_id);
 
-      // 1. Create Order
       const orderRes = await fetch(`${API_URL}/api/purchases/checkout/razorpay`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ productIds }),
+        body: JSON.stringify({ 
+          productIds,
+          discountCode: appliedDiscount ? couponCode : undefined,
+        }),
       });
 
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.error || "Failed to create order");
 
-      // 2. Open Razorpay
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
-          name: "Anarchy Bay",
-          description: `Purchase of ${cartItems.length} items`,
-          image: "/favicon_io/android-chrome-512x512.png",
-          order_id: orderData.orderId,
+        name: "Anarchy Bay",
+        description: `Purchase of ${cartItems.length} items`,
+        image: "/favicon_io/android-chrome-512x512.png",
+        order_id: orderData.orderId,
         handler: async (response) => {
           try {
             const verifyRes = await fetch(`${API_URL}/api/purchases/verify/razorpay`, {
@@ -105,7 +153,6 @@ export default function CartPage() {
 
             if (verifyRes.ok) {
               toast.success("Payment successful!");
-              // Clear cart after successful checkout
               for (const item of cartItems) {
                 await fetch(`${API_URL}/api/cart/${item.product_id}`, {
                   method: 'DELETE',
@@ -139,25 +186,37 @@ export default function CartPage() {
     }
   };
 
-  const total = cartItems.reduce((sum, item) => sum + (item.product?.price || 0), 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.product?.price || 0), 0);
   const currency = cartItems[0]?.product?.currency || 'INR';
   const currencySymbol = currency === 'INR' ? '₹' : '$';
+  
+  let discountAmount = 0;
+  if (appliedDiscount) {
+    if (appliedDiscount.type === 'percentage') {
+      discountAmount = (subtotal * appliedDiscount.value) / 100;
+    } else {
+      discountAmount = appliedDiscount.value;
+    }
+    discountAmount = Math.min(discountAmount, subtotal);
+  }
+  
+  const total = subtotal - discountAmount;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafafa]">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
         <NavBar />
-        <main className="pt-24 pb-20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <main className="pt-32 pb-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="animate-pulse space-y-8">
-              <div className="h-12 w-48 bg-gray-200 rounded-lg mb-8" />
-              <div className="grid lg:grid-cols-3 gap-10">
-                <div className="lg:col-span-2 space-y-4">
+              <div className="h-16 w-64 bg-gradient-to-r from-gray-200 to-gray-100 rounded-2xl" />
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-8 space-y-6">
                   {[1, 2].map(i => (
-                    <div key={i} className="h-40 bg-gray-200 rounded-3xl" />
+                    <div key={i} className="h-48 bg-gradient-to-r from-gray-200 to-gray-100 rounded-3xl" />
                   ))}
                 </div>
-                <div className="h-96 bg-gray-200 rounded-3xl" />
+                <div className="lg:col-span-4 h-[600px] bg-gradient-to-br from-gray-200 to-gray-100 rounded-3xl" />
               </div>
             </div>
           </div>
@@ -167,182 +226,341 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <NavBar />
 
-      <main className="pt-28 pb-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <header className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <h1 className="text-4xl sm:text-6xl font-black uppercase italic tracking-tight text-black">
-                Your <span className="text-blue-600">Cart</span>
-              </h1>
-              <p className="text-gray-500 font-bold mt-2 flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4" /> {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} ready for checkout
-              </p>
-            </div>
-            {cartItems.length > 0 && (
-              <button 
-                onClick={() => navigate('/browse')}
-                className="text-sm font-black uppercase tracking-wider text-gray-400 hover:text-black transition-colors flex items-center gap-2 border-b-2 border-transparent hover:border-black pb-1"
+      <main className="pt-32 pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-16">
+            <div className="flex items-center gap-4 mb-6">
+              <motion.div 
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", duration: 0.8 }}
+                className="w-16 h-16 bg-gradient-to-br from-blue-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200"
               >
-                Continue Shopping <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-          </header>
+                <ShoppingBag className="w-8 h-8 text-white" />
+              </motion.div>
+              <div>
+                <motion.h1 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-5xl sm:text-6xl lg:text-7xl font-black text-gray-900 tracking-tight"
+                >
+                  Shopping Cart
+                </motion.h1>
+                <motion.p 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-lg text-gray-500 font-semibold mt-2"
+                >
+                  <motion.span
+                    key={cartItems.length}
+                    initial={{ scale: 1.5, color: '#ec4899' }}
+                    animate={{ scale: 1, color: '#6b7280' }}
+                    transition={{ duration: 0.3 }}
+                    className="inline-block"
+                  >
+                    {cartItems.length}
+                  </motion.span> {cartItems.length === 1 ? 'item' : 'items'} in your cart
+                </motion.p>
+              </div>
+            </div>
+          </div>
 
           {cartItems.length === 0 ? (
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-white border-2 border-black/5 rounded-[3rem] p-12 sm:p-20 text-center shadow-xl shadow-black/5"
+              className="relative bg-white rounded-[3rem] p-16 sm:p-24 text-center shadow-2xl shadow-blue-100 border border-gray-100 overflow-hidden"
             >
-              <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8">
-                <ShoppingBag className="w-16 h-16 text-gray-200" />
+              <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100 to-pink-100 rounded-full blur-3xl opacity-50 -mr-48 -mt-48" />
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-pink-100 to-yellow-100 rounded-full blur-3xl opacity-50 -ml-48 -mb-48" />
+              
+              <div className="relative">
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", duration: 0.6 }}
+                  className="w-40 h-40 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-xl shadow-gray-200"
+                >
+                  <ShoppingBag className="w-20 h-20 text-gray-300" />
+                </motion.div>
+                <motion.h2 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-4xl font-black text-gray-900 mb-6"
+                >
+                  Your cart is empty
+                </motion.h2>
+                <motion.p 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-xl text-gray-500 font-medium mb-12 max-w-md mx-auto leading-relaxed"
+                >
+                  Discover amazing digital products and start building your collection today
+                </motion.p>
+                <motion.button
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/browse')}
+                  className="group inline-flex items-center gap-4 px-12 py-6 font-black text-lg bg-gradient-to-r from-blue-600 to-pink-600 text-white rounded-2xl hover:shadow-2xl hover:shadow-pink-300 transition-all duration-300"
+                >
+                  <Sparkles className="w-6 h-6" />
+                  Explore Products
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                </motion.button>
               </div>
-              <h2 className="text-3xl font-black uppercase italic mb-4">Your cart is empty</h2>
-              <p className="text-gray-500 mb-10 font-bold text-lg max-w-sm mx-auto">Looks like you haven't added anything to your cart yet.</p>
-              <button
-                onClick={() => navigate('/browse')}
-                className="group px-12 py-5 font-black uppercase italic bg-black text-white rounded-2xl hover:bg-blue-600 transition-all duration-300 flex items-center justify-center gap-3 mx-auto shadow-2xl shadow-blue-200"
-              >
-                Browse Products
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
             </motion.div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-12">
-              {/* Items List */}
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid lg:grid-cols-12 gap-8">
+              {/* Cart Items */}
+              <div className="lg:col-span-8 space-y-6">
                 <AnimatePresence mode="popLayout">
                   {cartItems.map((item) => (
                     <motion.div 
                       key={item.id}
                       layout
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: 20, opacity: 0 }}
-                      className="group bg-white border border-black/5 rounded-[2.5rem] p-5 sm:p-7 flex flex-col sm:flex-row gap-6 sm:items-center hover:border-black/20 hover:shadow-2xl transition-all duration-500"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -20, opacity: 0 }}
+                      className="group relative bg-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row gap-6 shadow-xl shadow-gray-100 border border-gray-100 hover:shadow-2xl hover:shadow-blue-100 hover:border-blue-200 transition-all duration-500 overflow-hidden"
                     >
-                      <Link to={`/product/${item.product_id}`} className="w-full sm:w-32 h-48 sm:h-32 flex-shrink-0 bg-gray-50 rounded-3xl overflow-hidden border border-black/5">
+                      {/* Decorative gradient */}
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -mr-32 -mt-32" />
+                      
+                      <Link to={`/product/${item.product_id}`} className="relative w-full sm:w-40 h-52 sm:h-40 flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-lg">
                         {item.product?.thumbnail_url ? (
                           <img src={item.product.thumbnail_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-5xl">📦</div>
+                          <div className="w-full h-full flex items-center justify-center text-6xl">📦</div>
                         )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                       </Link>
                       
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start gap-4">
-                          <Link to={`/product/${item.product_id}`} className="font-black text-2xl uppercase italic hover:text-blue-600 transition-colors line-clamp-1 tracking-tight">
-                            {item.product?.name || 'Product'}
-                          </Link>
-                          <button
-                            onClick={() => removeFromCart(item.product_id)}
-                            className="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                            title="Remove from cart"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                      <div className="relative flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start gap-4 mb-3">
+                            <Link to={`/product/${item.product_id}`} className="font-black text-2xl sm:text-3xl text-gray-900 hover:text-blue-600 transition-colors line-clamp-2 tracking-tight leading-tight">
+                              {item.product?.name || 'Product'}
+                            </Link>
+                            <button
+                              onClick={() => removeFromCart(item.product_id)}
+                              className="flex-shrink-0 p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                              title="Remove"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                          
+                          <p className="text-gray-500 font-medium line-clamp-2 mb-6 leading-relaxed">
+                            {item.product?.short_description || item.product?.description}
+                          </p>
                         </div>
                         
-                        <p className="text-sm text-gray-400 font-bold line-clamp-2 mt-1 mb-4 leading-relaxed">
-                          {item.product?.description}
-                        </p>
-                        
-                        <div className="flex items-center justify-between border-t border-black/5 pt-4">
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-300 bg-gray-50 px-3 py-1 rounded-full">
-                              Digital Asset
+                        <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-gray-100">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 rounded-full">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Digital Download
                             </span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-green-500 bg-green-50 px-3 py-1 rounded-full">
-                              In Stock
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-green-600 bg-green-50 rounded-full">
+                              <Zap className="w-3.5 h-3.5" />
+                              Instant Access
                             </span>
                           </div>
-                          <span className="font-black text-2xl text-black tracking-tighter">
-                            {currencySymbol}{item.product?.price || 0}
-                          </span>
+                          <div className="flex items-baseline gap-3">
+                            {appliedDiscount && (
+                              <span className="font-bold text-xl text-gray-400 line-through">
+                                {currencySymbol}{item.product?.price || 0}
+                              </span>
+                            )}
+                            <span className={`font-black text-3xl tracking-tight ${appliedDiscount ? 'text-green-600' : 'text-gray-900'}`}>
+                              {appliedDiscount ? (
+                                <>
+                                  {currencySymbol}
+                                  {(
+                                    parseFloat(item.product?.price || 0) - 
+                                    (appliedDiscount.type === 'percentage' 
+                                      ? (parseFloat(item.product?.price || 0) * appliedDiscount.value) / 100 / cartItems.length
+                                      : appliedDiscount.value / cartItems.length)
+                                  ).toFixed(2)}
+                                </>
+                              ) : (
+                                <>{currencySymbol}{item.product?.price || 0}</>
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
 
-                {/* Secure Badge */}
-                <div className="flex items-center justify-center gap-8 py-8 opacity-40 grayscale">
-                   <div className="flex items-center gap-2">
-                     <ShieldCheck className="w-5 h-5" />
-                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Secure Checkout</span>
-                   </div>
-                   <div className="flex items-center gap-2">
-                     <Zap className="w-5 h-5" />
-                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Instant Delivery</span>
-                   </div>
+                {/* Trust Badges */}
+                <div className="flex flex-wrap items-center justify-center gap-8 py-12 opacity-50">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <ShieldCheck className="w-5 h-5" />
+                    <span className="text-sm font-bold">Secure Payment</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Lock className="w-5 h-5" />
+                    <span className="text-sm font-bold">256-bit SSL</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Zap className="w-5 h-5" />
+                    <span className="text-sm font-bold">Instant Delivery</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Order Summary */}
-              <div className="lg:col-span-1">
-                <div className="bg-white border-2 border-black/5 rounded-[3rem] p-10 sticky top-28 shadow-2xl shadow-black/5 overflow-hidden">
-                  <h2 className="font-black text-2xl uppercase italic mb-8 border-b border-black/5 pb-4">Order Summary</h2>
-                  
-                  <div className="space-y-5 mb-10">
-                    <div className="flex justify-between items-center text-gray-500 font-bold text-sm">
-                      <span className="uppercase tracking-wider">Subtotal ({cartItems.length} items)</span>
-                      <span className="text-black font-black text-lg">{currencySymbol}{total.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-gray-500 font-bold text-sm">
-                      <span className="uppercase tracking-wider">Estimated Tax</span>
-                      <span className="text-black font-black text-lg">{currencySymbol}0.00</span>
-                    </div>
-                    <div className="flex justify-between items-center text-blue-600 font-bold text-sm bg-blue-50 px-4 py-2 rounded-xl">
-                      <span className="uppercase tracking-wider">Promo Applied</span>
-                      <span className="font-black text-lg">-$0.00</span>
-                    </div>
-                  </div>
+              {/* Payment Card */}
+              <div className="lg:col-span-4">
+                <div className="lg:sticky lg:top-28">
+                  <motion.div 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="relative bg-white rounded-3xl p-8 shadow-2xl shadow-pink-100 border border-gray-100 overflow-hidden"
+                  >
+                    {/* Decorative gradients */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100 to-pink-100 rounded-full blur-3xl opacity-30 -mr-32 -mt-32" />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-pink-100 to-yellow-100 rounded-full blur-3xl opacity-30 -ml-32 -mb-32" />
+                    
+                    <div className="relative">
+                      <motion.div 
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-100"
+                      >
+                        <motion.div 
+                          whileHover={{ rotate: 360 }}
+                          transition={{ duration: 0.6 }}
+                          className="w-12 h-12 bg-gradient-to-br from-blue-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg shadow-pink-200"
+                        >
+                          <CreditCard className="w-6 h-6 text-white" />
+                        </motion.div>
+                        <h2 className="font-black text-2xl text-gray-900">Order Summary</h2>
+                      </motion.div>
+                      
+                      <div className="space-y-5 mb-8">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 font-semibold">Subtotal</span>
+                          <span className="text-gray-900 font-black text-xl">{currencySymbol}{subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 font-semibold">Tax</span>
+                          <span className="text-gray-900 font-black text-xl">{currencySymbol}0.00</span>
+                        </div>
+                        {appliedDiscount && (
+                          <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="flex justify-between items-center bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-4 rounded-2xl border border-green-200 shadow-sm"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-green-600" />
+                              <span className="text-green-700 font-bold text-sm">Discount ({couponCode})</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="font-black text-xl text-green-600">-{currencySymbol}{discountAmount.toFixed(2)}</span>
+                              <button
+                                onClick={removeCoupon}
+                                className="text-green-400 hover:text-red-500 transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
 
-                  <div className="border-t-2 border-dashed border-black/5 pt-8 mb-10">
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <span className="font-black uppercase text-xs tracking-[0.2em] text-gray-400 block mb-1">Grand Total</span>
-                        <span className="font-black text-5xl text-black tracking-tighter italic">
-                          {currencySymbol}{total.toFixed(2)}
-                        </span>
+                      {/* Coupon Input */}
+                      {!appliedDiscount && (
+                        <div className="mb-8 pb-8 border-b border-gray-100">
+                          <label className="block text-sm font-bold text-gray-700 mb-3">
+                            Have a coupon code?
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={couponCode}
+                              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                              placeholder="ENTER CODE"
+                              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl font-semibold text-sm uppercase outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                              onKeyDown={(e) => e.key === 'Enter' && validateCoupon(couponCode)}
+                            />
+                            <button
+                              onClick={() => validateCoupon(couponCode)}
+                              disabled={validatingCoupon || !couponCode.trim()}
+                              className="px-6 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-blue-600 transition-all disabled:opacity-50"
+                            >
+                              {validatingCoupon ? '...' : 'Apply'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Total */}
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mb-8">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Total Amount</span>
+                            <span className="font-black text-5xl text-gray-900 tracking-tighter">{currencySymbol}{total.toFixed(2)}</span>
+                          </div>
+                          {appliedDiscount && (
+                            <div className="text-right">
+                              <span className="inline-block px-3 py-1 bg-green-500 text-white text-xs font-black rounded-full">
+                                SAVE {currencySymbol}{discountAmount.toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Checkout Button */}
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleCheckout}
+                        disabled={checkingOut}
+                        className="group w-full py-5 font-black text-lg bg-gradient-to-r from-blue-600 to-pink-600 text-white rounded-2xl hover:shadow-2xl hover:shadow-pink-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                      >
+                        {checkingOut ? (
+                          <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Lock className="w-5 h-5" />
+                            Proceed to Payment
+                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </motion.button>
+
+                      {/* Social Proof */}
+                      <div className="mt-8 text-center">
+                        <div className="flex justify-center -space-x-3 mb-4">
+                          {[1,2,3,4,5].map(i => (
+                            <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 overflow-hidden shadow-md">
+                              <img src={`https://i.pravatar.cc/100?img=${i+15}`} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs font-semibold text-gray-500 leading-relaxed">
+                          Join <span className="text-gray-900 font-black">2,000+</span> creators who trust us daily
+                        </p>
                       </div>
                     </div>
-                  </div>
-
-                  <button
-                    onClick={handleCheckout}
-                    disabled={checkingOut}
-                    className="group w-full py-6 font-black text-xl uppercase italic bg-black text-white rounded-[2rem] hover:bg-blue-600 transition-all duration-300 disabled:opacity-50 disabled:bg-gray-200 flex items-center justify-center gap-4 shadow-2xl shadow-blue-200 active:scale-[0.98]"
-                  >
-                    {checkingOut ? (
-                      <span className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <CreditCard className="w-6 h-6" />
-                        Pay Securely
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
-                  
-                  <div className="mt-8 flex flex-col items-center gap-4 text-center">
-                    <div className="flex -space-x-2">
-                       {[1,2,3,4].map(i => (
-                         <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center overflow-hidden">
-                           <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="" />
-                         </div>
-                       ))}
-                    </div>
-                    <p className="font-bold text-[10px] text-gray-400 uppercase tracking-widest leading-relaxed">
-                      Joined by <span className="text-black">2,000+</span> creators <br/> buying assets daily
-                    </p>
-                  </div>
-
-                  {/* Decorative Gradient */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                  </motion.div>
                 </div>
               </div>
             </div>

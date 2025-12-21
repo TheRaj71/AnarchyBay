@@ -8,7 +8,7 @@ import { useRazorpay } from "react-razorpay";
 import { 
   Star, ShoppingBag, Heart, Share2, ArrowLeft, 
   Check, Download, Package, Clock, Shield, 
-  ExternalLink, MessageSquare, Plus, X, Globe, Zap
+  ExternalLink, MessageSquare, Plus, X, Globe, Zap, FileText
 } from "lucide-react";
 
 const COMMENT_CHAR_LIMIT = 500;
@@ -16,19 +16,54 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 function renderMarkdown(text) {
   if (!text) return "";
-  let html = text
-    .replace(/^### (.+)$/gm, "<h3 class='text-xl font-bold mt-8 mb-4'>$1</h3>")
-    .replace(/^## (.+)$/gm, "<h2 class='text-2xl font-bold mt-10 mb-4'>$2</h2>")
-    .replace(/^# (.+)$/gm, "<h1 class='text-3xl font-bold mt-12 mb-6'>$1</h1>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+  
+  // Split by double newlines to get paragraphs
+  const paragraphs = text.split(/\n\n+/);
+  
+  let html = paragraphs.map(para => {
+    // Headers
+    if (para.startsWith('### ')) {
+      return `<h3 class='text-lg font-bold mt-6 mb-3 text-gray-900'>${para.slice(4)}</h3>`;
+    }
+    if (para.startsWith('## ')) {
+      return `<h2 class='text-xl font-bold mt-8 mb-4 text-gray-900'>${para.slice(3)}</h2>`;
+    }
+    if (para.startsWith('# ')) {
+      return `<h1 class='text-2xl font-bold mt-10 mb-5 text-gray-900'>${para.slice(2)}</h1>`;
+    }
+    
+    // Lists
+    if (para.match(/^[-*] /m)) {
+      const items = para.split('\n').filter(line => line.trim());
+      const listItems = items.map(item => {
+        const content = item.replace(/^[-*] /, '');
+        return `<li class='mb-2'>${formatInline(content)}</li>`;
+      }).join('');
+      return `<ul class='list-disc list-inside space-y-2 mb-4 text-gray-700'>${listItems}</ul>`;
+    }
+    
+    if (para.match(/^\d+\. /m)) {
+      const items = para.split('\n').filter(line => line.trim());
+      const listItems = items.map(item => {
+        const content = item.replace(/^\d+\. /, '');
+        return `<li class='mb-2'>${formatInline(content)}</li>`;
+      }).join('');
+      return `<ol class='list-decimal list-inside space-y-2 mb-4 text-gray-700'>${listItems}</ol>`;
+    }
+    
+    // Regular paragraph
+    return `<p class='mb-4 text-gray-700 leading-relaxed'>${formatInline(para)}</p>`;
+  }).join('');
+  
+  return `<div class='prose prose-slate max-w-none'>${html}</div>`;
+}
+
+function formatInline(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "<strong class='font-semibold text-gray-900'>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code class='px-2 py-1 bg-gray-100 rounded text-sm font-mono'>$1</code>")
-    .replace(/^- (.+)$/gm, "<li class='ml-4 list-disc mb-2'>$1</li>")
-    .replace(/^(\d+)\. (.+)$/gm, "<li class='ml-4 list-decimal mb-2'>$2</li>")
-    .replace(/\[(.+?)\]\((.+?)\)/g, "<a href='$2' class='text-[#0071e3] hover:underline font-bold' target='_blank' rel='noopener'>$1</a>")
-    .replace(/\n\n/g, "</p><p class='mb-4'>")
-    .replace(/\n/g, "<br/>");
-  return `<div class='prose max-w-none text-gray-600 leading-relaxed'><p class='mb-4'>${html}</p></div>`;
+    .replace(/`(.+?)`/g, "<code class='px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono text-gray-800'>$1</code>")
+    .replace(/\[(.+?)\]\((.+?)\)/g, "<a href='$2' class='text-blue-600 hover:text-blue-700 underline font-medium' target='_blank' rel='noopener'>$1</a>");
 }
 
 export default function ProductPage() {
@@ -52,6 +87,10 @@ export default function ProductPage() {
   const [inCart, setInCart] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   const [showDetailedPreview, setShowDetailedPreview] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [showCouponInput, setShowCouponInput] = useState(false);
 
   const { Razorpay } = useRazorpay();
 
@@ -126,6 +165,50 @@ export default function ProductPage() {
     fetchProduct();
   }, [productId, user?.id]);
 
+  const validateCoupon = async (code) => {
+    if (!code.trim()) {
+      setAppliedDiscount(null);
+      return;
+    }
+
+    setValidatingCoupon(true);
+    try {
+      const token = getAccessToken();
+      const res = await fetch(`${API_URL}/api/discounts/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          code: code.trim(),
+          productId: productId 
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (res.ok && data.valid) {
+        setAppliedDiscount(data.discount);
+        toast.success(`Coupon applied: ${data.discount.type === 'percentage' ? `${data.discount.value}%` : `₹${data.discount.value}`} off`);
+      } else {
+        setAppliedDiscount(null);
+        toast.error(data.error || 'Invalid coupon code');
+      }
+    } catch {
+      setAppliedDiscount(null);
+      toast.error('Failed to validate coupon');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setCouponCode('');
+    setAppliedDiscount(null);
+    toast.success('Coupon removed');
+  };
+
   const handleBuyNow = async () => {
     if (!isAuthenticated) {
       navigate("/login");
@@ -149,6 +232,7 @@ export default function ProductPage() {
         body: JSON.stringify({
           productId,
           variantId: selectedVariant?.id,
+          discountCode: appliedDiscount ? couponCode : undefined,
         }),
       });
 
@@ -159,7 +243,7 @@ export default function ProductPage() {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "BitShelf Marketplace",
+        name: "Anarchy Bay",
         description: `License for ${product.name}`,
         image: "/favicon_io/android-chrome-512x512.png",
         order_id: orderData.orderId,
@@ -338,7 +422,7 @@ export default function ProductPage() {
   const isCreator = user?.id === product.creator_id;
 
   return (
-    <div className="min-h-screen bg-white text-[#1d1d1f] font-sans">
+    <div className="min-h-screen font-sans" style={{ backgroundColor: product.page_color || '#ffffff', color: product.text_color || '#1d1d1f' }}>
       <NavBar />
 
       <main className="pt-24 pb-40">
@@ -515,79 +599,145 @@ export default function ProductPage() {
             </div>
 
             {/* Right Sidebar - Sticky Buy Section */}
-            <div className="lg:col-span-4 space-y-8">
-               <div className="sticky top-32 space-y-8">
-                  <div className="bg-[#1d1d1f] rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[60px]" />
+            <div className="lg:col-span-4">
+               <div className="lg:sticky lg:top-32">
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
                     
-                    <div className="relative mb-8 pt-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Acquisition Unit</p>
-                        <h2 className="text-6xl font-black tracking-tighter flex items-center gap-1">
-                            <span className="text-2xl font-bold self-start mt-2">{currencySymbol}</span>
-                            {product.price}
-                        </h2>
+                    <div className="mb-6">
+                        {appliedDiscount ? (
+                          <div>
+                            <div className="text-2xl font-bold text-gray-400 line-through mb-1">
+                                {currencySymbol}{product.price}
+                            </div>
+                            <div className="text-4xl font-bold text-gray-900">
+                                {currencySymbol}{(parseFloat(product.price) - (appliedDiscount.type === 'percentage' 
+                                  ? (parseFloat(product.price) * appliedDiscount.value) / 100 
+                                  : appliedDiscount.value)).toFixed(2)}
+                            </div>
+                            <p className="text-sm text-green-600 font-medium mt-1">Save {currencySymbol}{(appliedDiscount.type === 'percentage' 
+                              ? (parseFloat(product.price) * appliedDiscount.value) / 100 
+                              : appliedDiscount.value).toFixed(2)} with code {couponCode}</p>
+                          </div>
+                        ) : (
+                          <div className="text-4xl font-bold text-gray-900">
+                              {currencySymbol}{product.price}
+                          </div>
+                        )}
                     </div>
 
-                    {!hasPurchased && (
-                        <button
-                            onClick={handleAddToCart}
-                            className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all mb-4 border ${inCart ? 'bg-transparent border-gray-700 text-gray-400' : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'}`}
-                        >
-                            {inCart ? "✓ Asset Linked to Cart" : "+ Add to Repository"}
-                        </button>
+                    {!hasPurchased && !appliedDiscount && (
+                        <div className="mb-4">
+                            <button
+                                type="button"
+                                onClick={() => setShowCouponInput(!showCouponInput)}
+                                className="text-sm text-gray-600 hover:text-gray-900 font-medium flex items-center gap-1"
+                            >
+                                {showCouponInput ? 'Hide' : 'Have a discount code?'}
+                            </button>
+                            {showCouponInput && (
+                                <div className="mt-3 flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={couponCode}
+                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                        placeholder="CODE"
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium uppercase focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                                        onKeyDown={(e) => e.key === 'Enter' && validateCoupon(couponCode)}
+                                    />
+                                    <button
+                                        onClick={() => validateCoupon(couponCode)}
+                                        disabled={validatingCoupon || !couponCode.trim()}
+                                        className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {validatingCoupon ? '...' : 'Apply'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {appliedDiscount && !hasPurchased && (
+                        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-green-800 truncate">{couponCode} applied</p>
+                            </div>
+                            <button
+                                onClick={removeCoupon}
+                                className="text-green-600 hover:text-red-600 transition-colors"
+                                title="Remove"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
                     )}
 
                     <button
                         onClick={handleBuyNow}
                         disabled={buying}
-                        className="w-full py-6 rounded-[1.5rem] bg-[#0071e3] hover:bg-[#0077ed] text-white font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-900/40 flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50"
+                        className="w-full py-3.5 rounded-lg font-semibold text-base transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 mb-3"
+                        style={{ 
+                          backgroundColor: product.button_color || '#000000', 
+                          color: '#ffffff'
+                        }}
                     >
                         {buying ? (
-                            <Zap className="animate-spin" size={20} />
+                            <Zap className="animate-spin" size={18} />
                         ) : hasPurchased ? (
-                            <><Download size={18} /> Download Asset</>
+                            <><Download size={18} /> Download</>
                         ) : (
-                            "Launch Transaction"
+                            <>I want this</>
                         )}
                     </button>
 
-                    <div className="grid grid-cols-2 gap-3 mt-6">
+                    {!hasPurchased && (
+                        <button
+                            onClick={handleAddToCart}
+                            className="w-full py-3 rounded-lg border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium text-sm transition-all flex items-center justify-center gap-2"
+                        >
+                            <ShoppingBag size={16} />
+                            {inCart ? "In Cart" : "Add to Cart"}
+                        </button>
+                    )}
+
+                    <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Check size={16} className="text-green-600" />
+                            <span>Instant access</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Check size={16} className="text-green-600" />
+                            <span>Lifetime updates</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Check size={16} className="text-green-600" />
+                            <span>Commercial license</span>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex items-center gap-4">
                         <button
                             onClick={handleAddToWishlist}
-                            className={`py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${inWishlist ? "border-pink-500/50 text-pink-500 bg-pink-500/5" : "border-white/10 text-white/40 hover:text-white hover:border-white/20"}`}
+                            className={`flex-1 py-2.5 rounded-lg border transition-all flex items-center justify-center gap-2 ${inWishlist ? "border-pink-500 text-pink-500 bg-pink-50" : "border-gray-200 text-gray-600 hover:border-gray-300"}`}
                         >
-                            <Heart size={14} fill={inWishlist ? "currentColor" : "none"} />
-                            {inWishlist ? "Saved" : "Save"}
+                            <Heart size={16} fill={inWishlist ? "currentColor" : "none"} />
+                            <span className="text-sm font-medium">{inWishlist ? "Saved" : "Save"}</span>
                         </button>
                         <div className="relative">
-                            <button onClick={() => setShowShareMenu(!showShareMenu)} className="w-full py-4 rounded-xl border border-white/10 text-white/40 font-bold text-[10px] uppercase tracking-widest hover:text-white hover:border-white/20 transition-all flex items-center justify-center gap-2">
-                                <Share2 size={14} /> Share
+                            <button 
+                                onClick={() => setShowShareMenu(!showShareMenu)} 
+                                className="p-2.5 border border-gray-200 rounded-lg hover:border-gray-300 transition-all"
+                            >
+                                <Share2 size={18} className="text-gray-600" />
                             </button>
                             {showShareMenu && (
-                                <div className="absolute right-0 bottom-full mb-4 bg-white rounded-2xl p-2 shadow-2xl z-50 text-black min-w-[160px] animate-in slide-in-from-bottom-2">
+                                <div className="absolute right-0 bottom-full mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[140px]">
                                     {['Twitter', 'Facebook', 'LinkedIn', 'Copy'].map((item) => (
-                                        <button key={item} onClick={() => handleShare(item.toLowerCase())} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-gray-50 rounded-xl transition-colors">{item}</button>
+                                        <button key={item} onClick={() => handleShare(item.toLowerCase())} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors">{item}</button>
                                     ))}
                                 </div>
                             )}
                         </div>
                     </div>
-
-                    <div className="mt-10 pt-8 border-t border-white/5 space-y-4">
-                        <FeatureItem label="Instant Global Delivery" />
-                        <FeatureItem label="Verified Developer Node" />
-                        <FeatureItem label="Standard Network License" />
-                    </div>
-                  </div>
-
-                  <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100 flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white rounded-[1.25rem] shadow-sm flex items-center justify-center flex-shrink-0">
-                             <Clock size={24} className="text-[#0071e3]" />
-                        </div>
-                        <div>
-                             <p className="text-sm font-bold">Standard Support</p>
-                             <p className="text-xs text-gray-500 font-medium">Response within 24 node cycles.</p>
-                        </div>
                   </div>
                </div>
             </div>

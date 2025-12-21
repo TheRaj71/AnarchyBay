@@ -5,12 +5,14 @@ import { supabase } from "../lib/supabase.js";
 import { createPurchase, updatePurchase } from "../repositories/purchase.repository.js";
 import { findProductById } from "../repositories/product.repository.js";
 import { findVariantById } from "../repositories/variant.repository.js";
-import { generateLicenseKey, calculatePlatformFee } from "../lib/license.js";
+import { generateLicenseKey, calculatePlatformFee, calculateDiscount } from "../lib/license.js";
+import { validateDiscount, useDiscount } from "./discount.service.js";
 
-export const createRazorpayOrder = async ({ productId, productIds, variantId, customerId, discountAmount = 0, discountCodeId = null }) => {
+export const createRazorpayOrder = async ({ productId, productIds, variantId, customerId, discountAmount = 0, discountCodeId = null, discountCode = null }) => {
   let finalAmount = 0;
   let currency = "INR";
   const items = [];
+  let validatedDiscount = null;
 
   if (productIds && Array.isArray(productIds)) {
     for (const id of productIds) {
@@ -36,7 +38,30 @@ export const createRazorpayOrder = async ({ productId, productIds, variantId, cu
     throw new Error("No products specified");
   }
 
-  finalAmount = Math.max(0, finalAmount - discountAmount);
+  // Validate and apply discount code if provided
+  let totalDiscountAmount = 0;
+  if (discountCode) {
+    const validation = await validateDiscount(discountCode, null, finalAmount);
+    if (!validation.valid) {
+      throw new Error(validation.error.message);
+    }
+    validatedDiscount = validation.discount;
+    
+    // Calculate discount amount
+    if (validatedDiscount.type === 'percentage') {
+      totalDiscountAmount = (finalAmount * validatedDiscount.value) / 100;
+    } else {
+      totalDiscountAmount = validatedDiscount.value;
+    }
+    
+    // Ensure discount doesn't exceed total
+    totalDiscountAmount = Math.min(totalDiscountAmount, finalAmount);
+  } else if (discountAmount > 0) {
+    // Use provided discount amount if no code specified
+    totalDiscountAmount = discountAmount;
+  }
+
+  finalAmount = Math.max(0, finalAmount - totalDiscountAmount);
   const amountInPaise = Math.round(finalAmount * 100);
 
   const options = {
@@ -51,8 +76,21 @@ export const createRazorpayOrder = async ({ productId, productIds, variantId, cu
 
     for (const item of items) {
       const itemAmount = parseFloat(item.price);
-      const platformFee = calculatePlatformFee(itemAmount);
-      const creatorEarnings = itemAmount - platformFee;
+      
+      // Calculate proportional discount for this item if discount is applied
+      let itemDiscount = 0;
+      if (totalDiscountAmount > 0 && items.length > 1) {
+        // Proportional discount based on item price
+        const subtotal = items.reduce((sum, i) => sum + parseFloat(i.price), 0);
+        itemDiscount = (itemAmount / subtotal) * totalDiscountAmount;
+      } else if (totalDiscountAmount > 0 && items.length === 1) {
+        // Single item gets full discount
+        itemDiscount = totalDiscountAmount;
+      }
+      
+      const finalItemAmount = itemAmount - itemDiscount;
+      const platformFee = calculatePlatformFee(finalItemAmount);
+      const creatorEarnings = finalItemAmount - platformFee;
       const licenseKey = generateLicenseKey();
 
         const { data: purchase, error: purchaseError } = await createPurchase({
@@ -68,12 +106,17 @@ export const createRazorpayOrder = async ({ productId, productIds, variantId, cu
           creator_earnings: creatorEarnings,
           license_key: licenseKey,
           status: "pending",
-          discount_code_id: (productId === item.id) ? discountCodeId : null,
-          discount_amount: (productId === item.id) ? discountAmount : 0,
+          discount_code_id: validatedDiscount ? validatedDiscount.id : (discountCodeId || null),
+          discount_amount: itemDiscount,
         });
 
       if (purchaseError) throw new Error("Failed to create purchase record");
       purchaseIds.push(purchase.id);
+    }
+
+    // Increment discount usage after successful order creation
+    if (validatedDiscount) {
+      await useDiscount(validatedDiscount.id);
     }
 
     return {
