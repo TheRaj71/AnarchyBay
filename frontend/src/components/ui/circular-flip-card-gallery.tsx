@@ -131,30 +131,30 @@ export default function CircularGallery() {
     return () => cancelAnimationFrame(animationFrameId)
   }, [])
 
-  const radius = size * (size < 640 ? 0.35 : 0.38)
+  const radius = size * (size < 640 ? 0.38 : 0.42)
   const centerX = size / 2
   const centerY = size / 2
 
   return (
-    <div className="font-sans bg-transparent text-black py-10 flex items-center justify-center p-4 overflow-hidden w-full relative">
+    <div className="font-sans bg-transparent text-black py-12 md:py-20 flex items-center justify-center p-4 overflow-hidden w-full relative">
          <div className="absolute inset-0 pattern-dots opacity-20 pointer-events-none" />
       <div
         ref={galleryRef}
-        className="relative w-full max-w-[400px] sm:max-w-[600px] md:max-w-[800px] aspect-square flex items-center justify-center"
+        className="relative w-full max-w-[400px] sm:max-w-[650px] md:max-w-[900px] aspect-square flex items-center justify-center"
       >
         {/* Central text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-4">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-black text-center text-balance mb-4 leading-[0.85] uppercase italic">
+          <h1 className="text-4xl md:text-6xl lg:text-8xl font-black text-black text-center text-balance mb-6 leading-[0.8] uppercase italic">
             Visualizing <br/> <span className="text-pink-500 underline decoration-black underline-offset-8">The Shelf</span>
           </h1>
-          <p className="text-xs md:text-sm text-black/80 uppercase tracking-[0.5em] font-black bg-yellow-300 px-4 py-1 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <p className="text-[10px] md:text-sm text-black/80 uppercase tracking-[0.4em] md:tracking-[0.5em] font-black bg-yellow-300 px-4 md:px-6 py-2 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             Hover to Explore
           </p>
         </div>
 
         {/* Circular arrangement of cards */}
         {size > 0 &&
-          [...cardData, ...cardData.slice(0, 3)].map((card, index, arr) => {
+          [...cardData, ...cardData.slice(0, 6)].map((card, index, arr) => {
             const angle = (index / arr.length) * 2 * Math.PI - Math.PI / 2 + rotation
             const x = centerX + radius * Math.cos(angle)
             const y = centerY + radius * Math.sin(angle)
@@ -163,7 +163,7 @@ export default function CircularGallery() {
               <FlipCard
                 key={index}
                 {...card}
-                className="absolute hover:z-20 scale-110 md:scale-125"
+                className="absolute hover:z-20 scale-100 sm:scale-110 md:scale-125"
                 style={{
                   left: `${x}px`,
                   top: `${y}px`,

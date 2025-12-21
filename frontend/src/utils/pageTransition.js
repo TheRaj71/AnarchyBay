@@ -1,13 +1,13 @@
+import gsap from 'gsap';
+
 export function runPageTransition() {
-  if (typeof window === 'undefined' || !window.gsap) return;
+  if (typeof window === 'undefined') return;
   
   const overlay = document.getElementById("stairs-overlay");
   const page = document.getElementById("root");
   
   if (!overlay || !page) return;
 
-  const { gsap } = window;
-  
   gsap.set(overlay, { display: "none" });
   gsap.set(".stair", { clearProps: "all" });
   gsap.set(page, { clearProps: "all" });

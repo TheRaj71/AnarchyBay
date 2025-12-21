@@ -58,9 +58,8 @@ const items = [
 
 export function Accordion05() {
   return (
-    <div className="w-full max-w-4xl mx-auto py-20 px-4 text-center">
-      <h2 className="text-4xl md:text-6xl font-black uppercase mb-12 tracking-tighter">FAQ</h2>
-      <Accordion type="single" collapsible className="w-full border-t-3 border-black text-left">
+    <div className="w-full">
+      <Accordion type="single" collapsible className="w-full border-t-2 border-black text-left">
         {items.map((item) => (
           <AccordionItem value={item.id} key={item.id} className="border-black">
             <AccordionTrigger className="group text-left px-4 md:px-8 text-black/40 duration-300 hover:no-underline cursor-pointer data-[state=open]:text-black hover:text-black">
